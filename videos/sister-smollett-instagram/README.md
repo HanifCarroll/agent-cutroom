@@ -24,6 +24,6 @@ The staged file at `assets/input-video.mp4` is a short Agent Cutroom rough cut m
 ## Commands
 
 ```sh
-npm run check
-npm run render -- --quality high --output output.mp4
+bun run check
+bun run render -- --quality high --output output.mp4
 ```

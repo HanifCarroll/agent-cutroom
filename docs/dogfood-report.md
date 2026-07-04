@@ -15,8 +15,8 @@ This report records dogfooding on real videos of people talking. The source medi
 ## Setup
 
 ```sh
-pnpm install
-pnpm build
+bun install
+bun run build
 examples/real-talk/scripts/download-real-talking-videos.sh
 ```
 
@@ -27,18 +27,18 @@ The original real-video run did not invent transcripts. The follow-up dogfood pa
 ### Sister Smollett
 
 ```sh
-node dist/cli/index.js init examples/real-talk/media/sister-smollett.webm \
+bun dist/cli/index.js init examples/real-talk/media/sister-smollett.webm \
   --out examples/real-talk/projects/sister-smollett \
   --title "Sister Smollett Interview Clip"
-node dist/cli/index.js prepare examples/real-talk/projects/sister-smollett \
+bun dist/cli/index.js prepare examples/real-talk/projects/sister-smollett \
   --interval-ms 2500 --max-frames 12 --window-ms 8000
-node dist/cli/index.js transcribe examples/real-talk/projects/sister-smollett \
+bun dist/cli/index.js transcribe examples/real-talk/projects/sister-smollett \
   --prompt "Names: Sister Circle, Jussie Smollett"
-node dist/cli/index.js review-pack examples/real-talk/projects/sister-smollett \
+bun dist/cli/index.js review-pack examples/real-talk/projects/sister-smollett \
   --window-ms 8000
-node dist/cli/index.js plan examples/real-talk/projects/sister-smollett
-node dist/cli/index.js render examples/real-talk/projects/sister-smollett
-node dist/cli/index.js hyperframes-brief examples/real-talk/projects/sister-smollett
+bun dist/cli/index.js plan examples/real-talk/projects/sister-smollett
+bun dist/cli/index.js render examples/real-talk/projects/sister-smollett
+bun dist/cli/index.js hyperframes-brief examples/real-talk/projects/sister-smollett
 ```
 
 Result:
@@ -56,9 +56,9 @@ HyperFrames Instagram package:
 
 ```sh
 cd videos/sister-smollett-instagram
-npm run check
-npx hyperframes snapshot --frames 6
-npm run render -- --quality high --output output.mp4
+bun run check
+bunx hyperframes@0.7.31 snapshot --frames 6
+bun run render -- --quality high --output output.mp4
 ffprobe -v error -show_entries stream=width,height,r_frame_rate \
   -show_entries format=duration,size -of json output.mp4
 ```
@@ -75,14 +75,14 @@ Result:
 ### Eugene Parker
 
 ```sh
-node dist/cli/index.js init examples/real-talk/media/eugene-parker.webm \
+bun dist/cli/index.js init examples/real-talk/media/eugene-parker.webm \
   --out examples/real-talk/projects/eugene-parker \
   --title "Interview with Dr. Eugene Parker"
-node dist/cli/index.js prepare examples/real-talk/projects/eugene-parker \
+bun dist/cli/index.js prepare examples/real-talk/projects/eugene-parker \
   --interval-ms 10000 --max-frames 24 --window-ms 30000
-node dist/cli/index.js plan examples/real-talk/projects/eugene-parker
-node dist/cli/index.js render examples/real-talk/projects/eugene-parker
-node dist/cli/index.js hyperframes-brief examples/real-talk/projects/eugene-parker
+bun dist/cli/index.js plan examples/real-talk/projects/eugene-parker
+bun dist/cli/index.js render examples/real-talk/projects/eugene-parker
+bun dist/cli/index.js hyperframes-brief examples/real-talk/projects/eugene-parker
 ```
 
 Result:
@@ -97,14 +97,14 @@ Result:
 ### Jad Azraq
 
 ```sh
-node dist/cli/index.js init examples/real-talk/media/jad-azraq.webm \
+bun dist/cli/index.js init examples/real-talk/media/jad-azraq.webm \
   --out examples/real-talk/projects/jad-azraq \
   --title "Jad Azraq Interview"
-node dist/cli/index.js prepare examples/real-talk/projects/jad-azraq \
+bun dist/cli/index.js prepare examples/real-talk/projects/jad-azraq \
   --interval-ms 10000 --max-frames 24 --window-ms 30000
-node dist/cli/index.js plan examples/real-talk/projects/jad-azraq
-node dist/cli/index.js render examples/real-talk/projects/jad-azraq
-node dist/cli/index.js hyperframes-brief examples/real-talk/projects/jad-azraq
+bun dist/cli/index.js plan examples/real-talk/projects/jad-azraq
+bun dist/cli/index.js render examples/real-talk/projects/jad-azraq
+bun dist/cli/index.js hyperframes-brief examples/real-talk/projects/jad-azraq
 ```
 
 Result:
@@ -119,10 +119,10 @@ Result:
 ## Verification
 
 ```sh
-pnpm check
-pnpm build
-node dist/cli/index.js doctor
-node dist/cli/index.js transcribe <project>
+bun run check
+bun run build
+bun dist/cli/index.js doctor
+bun dist/cli/index.js transcribe <project>
 ffprobe -v error -show_entries stream=width,height -show_entries format=duration,size -of json <render>
 ```
 

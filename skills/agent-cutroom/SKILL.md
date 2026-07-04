@@ -11,7 +11,7 @@ Set the checkout path once:
 
 ```sh
 CUTROOM_DIR="${CUTROOM_DIR:-/path/to/agent-cutroom}"
-cutroom() { node "$CUTROOM_DIR/dist/cli/index.js" "$@"; }
+cutroom() { bun "$CUTROOM_DIR/dist/cli/index.js" "$@"; }
 ```
 
 ## Contract
@@ -27,8 +27,8 @@ cutroom() { node "$CUTROOM_DIR/dist/cli/index.js" "$@"; }
 
 ```sh
 cd "$CUTROOM_DIR"
-pnpm install
-pnpm build
+bun install
+bun run build
 cutroom doctor
 ```
 

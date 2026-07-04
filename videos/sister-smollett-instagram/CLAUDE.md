@@ -21,22 +21,22 @@ The domain skills (`/hyperframes-core`, `/hyperframes-animation`, `/hyperframes-
 
 > **Tailwind v4 projects** (`hyperframes init --tailwind`): see `/hyperframes-core` → `references/tailwind.md`.
 
-> **Skills not available or need updating?** Run `npx skills add heygen-com/hyperframes`
+> **Skills not available or need updating?** Run `bunx skills add heygen-com/hyperframes`
 > and restart the agent session so the new skills load.
 
 ## Commands
 
 ```bash
-npm run dev          # start the preview server (long-running — keep it alive in background)
-npm run check        # lint + validate + inspect
-npm run render       # render to MP4
-npm run publish      # publish and get a shareable link
-npx hyperframes lint --verbose  # include info-level findings
-npx hyperframes lint --json     # machine-readable output for CI
-npx hyperframes docs <topic> # reference docs in terminal
+bun run dev          # start the preview server (long-running — keep it alive in background)
+bun run check        # lint + validate + inspect
+bun run render       # render to MP4
+bun run publish      # publish and get a shareable link
+bunx hyperframes@0.7.31 lint --verbose  # include info-level findings
+bunx hyperframes@0.7.31 lint --json     # machine-readable output for CI
+bunx hyperframes@0.7.31 docs <topic> # reference docs in terminal
 ```
 
-> **`npm run dev` is a long-running server, not a one-shot command.** It blocks until stopped.
+> **`bun run dev` is a long-running server, not a one-shot command.** It blocks until stopped.
 > In Claude Code, always run it with `run_in_background: true`. Never run it as a foreground
 > command — it will time out and the server will die, breaking the browser preview.
 
@@ -45,7 +45,7 @@ npx hyperframes docs <topic> # reference docs in terminal
 **For quick reference**, use the local CLI docs command (no network required):
 
 ```bash
-npx hyperframes docs <topic>
+bunx hyperframes@0.7.31 docs <topic>
 ```
 
 Topics: `data-attributes`, `gsap`, `compositions`, `rendering`, `examples`, `troubleshooting`
@@ -68,7 +68,7 @@ https://hyperframes.heygen.com/llms.txt
 After creating or editing any `.html` composition, **always** run the full check before considering the task complete:
 
 ```bash
-npm run check
+bun run check
 ```
 
 Fix all errors before presenting the result. Inspect warnings should be reviewed before rendering.

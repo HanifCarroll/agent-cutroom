@@ -24,43 +24,42 @@ This is designed for workflows where Codex is the editor/producer and needs tool
 
 ## Requirements
 
-- Node.js 22+
-- pnpm
+- Bun 1.3+
 - FFmpeg and ffprobe on `PATH`
 - Optional for generated transcripts: [`transcribe-audio`](https://github.com/HanifCarroll/transcribe-audio) on `PATH`
 
 Check your machine:
 
 ```sh
-pnpm install
-pnpm build
-node dist/cli/index.js doctor
+bun install
+bun run build
+bun dist/cli/index.js doctor
 ```
 
 ## Quick Start
 
 ```sh
-pnpm install
-pnpm build
+bun install
+bun run build
 
-node dist/cli/index.js init ./input.mp4 --transcript ./transcript.json --out ./my-cut --title "My Cut"
-node dist/cli/index.js prepare ./my-cut
+bun dist/cli/index.js init ./input.mp4 --transcript ./transcript.json --out ./my-cut --title "My Cut"
+bun dist/cli/index.js prepare ./my-cut
 open ./my-cut/review/review-pack.md
 ```
 
 Or generate the transcript locally with the transcription-to-vault workbench:
 
 ```sh
-node dist/cli/index.js init ./input.mp4 --out ./my-cut --title "My Cut"
-node dist/cli/index.js transcribe ./my-cut \
+bun dist/cli/index.js init ./input.mp4 --out ./my-cut --title "My Cut"
+bun dist/cli/index.js transcribe ./my-cut \
   --prompt "Names: product names, people, places"
-node dist/cli/index.js prepare ./my-cut
+bun dist/cli/index.js prepare ./my-cut
 ```
 
 After inspecting the frames/contact sheet, record observations:
 
 ```sh
-node dist/cli/index.js observe ./my-cut \
+bun dist/cli/index.js observe ./my-cut \
   --window window-001 \
   --summary "Talking head over a dashboard; the screen supports the spoken point." \
   --visible-text "Dashboard, Export, Revenue" \
@@ -72,14 +71,14 @@ node dist/cli/index.js observe ./my-cut \
 Create and render a rough cut:
 
 ```sh
-node dist/cli/index.js plan ./my-cut
-node dist/cli/index.js render ./my-cut
+bun dist/cli/index.js plan ./my-cut
+bun dist/cli/index.js render ./my-cut
 ```
 
 Generate a HyperFrames brief for the polish pass:
 
 ```sh
-node dist/cli/index.js hyperframes-brief ./my-cut
+bun dist/cli/index.js hyperframes-brief ./my-cut
 ```
 
 ## Commands
@@ -178,9 +177,9 @@ This repo also includes a checked-in HyperFrames dogfood project at [videos/sist
 ## Development
 
 ```sh
-pnpm install
-pnpm check
-pnpm build
+bun install
+bun run check
+bun run build
 ```
 
 ## Status

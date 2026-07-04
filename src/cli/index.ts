@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 import { Command } from "commander";
 import { mkdir } from "node:fs/promises";
 import { join, resolve } from "node:path";

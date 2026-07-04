@@ -9,4 +9,4 @@ Core rule: keep judgment in the agent and deterministic media work in tools.
 - Keep source media, transcript segments, silence ranges, frame paths, observations, and edit plans in explicit JSON/Markdown artifacts.
 - Do not infer timestamped transcript segments from plain text. Store untimed text with a warning.
 - Use FFmpeg/ffprobe for media operations.
-- Run `pnpm check` and `pnpm build` before shipping changes.
+- Run `bun run check` and `bun run build` before shipping changes.

@@ -7,8 +7,8 @@ This report records the synthetic smoke-fixture pass for Agent Cutroom. These ge
 ## Setup
 
 ```sh
-pnpm install
-pnpm build
+bun install
+bun run build
 examples/synthetic-fixtures/scripts/make-sample-media.sh
 ```
 
