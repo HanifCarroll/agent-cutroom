@@ -155,7 +155,7 @@ export async function extractFrames({
       "-frames:v",
       "1",
       "-vf",
-      "scale='min(1280,iw)':-2",
+      "scale='min(1280,iw)':-2,format=yuvj420p",
       "-q:v",
       "3",
       outputPath,

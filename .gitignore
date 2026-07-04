@@ -4,6 +4,8 @@ dist/
 .cutroom/
 *.log
 
-# Generated dogfood media can be rebuilt from examples/dogfood/scripts.
-examples/dogfood/projects/
-examples/dogfood/media/
+# Generated example media and project outputs can be rebuilt from scripts.
+examples/synthetic-fixtures/projects/
+examples/synthetic-fixtures/media/
+examples/real-talk/projects/
+examples/real-talk/media/

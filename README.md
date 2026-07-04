@@ -124,17 +124,27 @@ Agent Cutroom owns the raw footage workflow: timeline metadata, transcript, fram
 
 HyperFrames fits after the rough cut, when the agent wants a polished composition with captions, title cards, lower thirds, callouts, pull quotes, B-roll layouts, or social-ready packaging. `agent-cutroom hyperframes-brief` exports the timeline context needed for that pass.
 
-## Dogfood Fixtures
+## Synthetic Smoke Fixtures
 
 The repo includes a reproducible sample-media script:
 
 ```sh
-examples/dogfood/scripts/make-sample-media.sh
+examples/synthetic-fixtures/scripts/make-sample-media.sh
 ```
 
 Generated media and project outputs are ignored by git.
 
-See [docs/dogfood-report.md](docs/dogfood-report.md) for the first local dogfood run and verification results.
+See [docs/synthetic-fixture-report.md](docs/synthetic-fixture-report.md) for the synthetic fixture smoke run.
+
+## Real Talking-Head Dogfood
+
+Real dogfood uses public real-person talking videos:
+
+```sh
+examples/real-talk/scripts/download-real-talking-videos.sh
+```
+
+The downloaded source media and generated project outputs are ignored by git. See [docs/dogfood-report.md](docs/dogfood-report.md) for the real-video dogfood run and verification results.
 
 ## Development
 
