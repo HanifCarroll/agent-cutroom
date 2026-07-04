@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.DS_Store
+.cutroom/
+*.log
+
+# Generated dogfood media can be rebuilt from examples/dogfood/scripts.
+examples/dogfood/projects/
+examples/dogfood/media/
