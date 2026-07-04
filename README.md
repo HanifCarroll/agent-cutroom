@@ -100,6 +100,18 @@ agent-cutroom render <project>
 agent-cutroom hyperframes-brief <project>
 ```
 
+## Agent Skill
+
+This repo includes a starter Codex skill at [skills/agent-cutroom/SKILL.md](skills/agent-cutroom/SKILL.md). Copy it into your skills directory and set `CUTROOM_DIR` to this checkout:
+
+```sh
+mkdir -p ~/.codex/skills/agent-cutroom
+cp skills/agent-cutroom/SKILL.md ~/.codex/skills/agent-cutroom/SKILL.md
+export CUTROOM_DIR="$PWD"
+```
+
+The skill keeps the workflow predictable: initialize a project, generate or import transcript metadata, prepare frames/contact sheets, record agent observations, plan and render rough cuts, then hand off to HyperFrames or caption rendering only after the rough cut exists.
+
 ## Transcript Format
 
 Agent Cutroom imports timestamped JSON transcripts. It supports Whisper-like segments:

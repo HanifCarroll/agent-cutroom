@@ -10,3 +10,6 @@ examples/synthetic-fixtures/media/
 examples/real-talk/projects/
 examples/real-talk/media/
 videos/*/snapshots/
+videos/*/output-*.mp4
+videos/*/output-*.jpg
+videos/*/*subtitles.ass
