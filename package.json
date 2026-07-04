@@ -15,10 +15,12 @@
   },
   "homepage": "https://github.com/HanifCarroll/agent-cutroom#readme",
   "bin": {
-    "agent-cutroom": "./dist/cli/index.js"
+    "agent-cutroom": "./dist/cli/index.js",
+    "agent-cutroom-mcp": "./dist/mcp/server.js"
   },
   "files": [
     "dist",
+    "docs",
     "skills",
     "README.md",
     "LICENSE"
@@ -26,11 +28,13 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "bun src/cli/index.ts",
+    "mcp": "bun src/mcp/server.ts",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "check": "bun run typecheck && bun run test"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "commander": "^14.0.0",
     "zod": "^4.1.12"
   },

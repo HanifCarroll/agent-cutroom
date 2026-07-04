@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { extname } from "node:path";
 import { secondsToMs } from "./time.js";
-import type { TranscriptSegment } from "./schema.js";
+import type { TranscriptSegment, TranscriptWord } from "./schema.js";
 
 export interface LoadedTranscript {
   segments: TranscriptSegment[];
@@ -35,6 +35,30 @@ function offsetMsValue(value: unknown): number | null {
     : null;
 }
 
+function probabilityValue(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value)
+    ? Math.min(1, Math.max(0, value))
+    : null;
+}
+
+function parseWord(raw: unknown, segmentIndex: number, wordIndex: number): TranscriptWord | null {
+  if (!isObject(raw)) return null;
+  const text = textValue(raw.text) ?? textValue(raw.word);
+  if (!text) return null;
+  const startMs = msValue(raw.startMs) ?? secondsValue(raw.start);
+  const endMs = msValue(raw.endMs) ?? secondsValue(raw.end);
+  if (startMs === null || endMs === null || endMs < startMs) return null;
+  return {
+    id:
+      textValue(raw.id) ??
+      `seg-${String(segmentIndex + 1).padStart(4, "0")}-word-${String(wordIndex + 1).padStart(3, "0")}`,
+    startMs,
+    endMs,
+    text,
+    probability: probabilityValue(raw.probability),
+  };
+}
+
 function parseSegment(raw: unknown, index: number): TranscriptSegment | null {
   if (!isObject(raw)) return null;
   const text = textValue(raw.text);
@@ -42,11 +66,17 @@ function parseSegment(raw: unknown, index: number): TranscriptSegment | null {
   const startMs = msValue(raw.startMs) ?? secondsValue(raw.start);
   const endMs = msValue(raw.endMs) ?? secondsValue(raw.end);
   if (startMs === null || endMs === null || endMs < startMs) return null;
+  const words = Array.isArray(raw.words)
+    ? raw.words
+        .map((word, wordIndex) => parseWord(word, index, wordIndex))
+        .filter((word): word is TranscriptWord => Boolean(word))
+    : [];
   return {
     id: textValue(raw.id) ?? `seg-${String(index + 1).padStart(4, "0")}`,
     startMs,
     endMs,
     text,
+    words,
   };
 }
 
@@ -63,6 +93,7 @@ function parseWhisperCppSegment(raw: unknown, index: number): TranscriptSegment 
     startMs,
     endMs,
     text,
+    words: [],
   };
 }
 

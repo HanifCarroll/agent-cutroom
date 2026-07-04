@@ -22,6 +22,8 @@ examples/real-talk/scripts/download-real-talking-videos.sh
 
 The original real-video run did not invent transcripts. The follow-up dogfood pass used the local `transcribe-audio` workbench on `sister-smollett`, imported timestamped transcript segments into Agent Cutroom, and used those artifacts to build a HyperFrames Instagram package.
 
+The latest pass also exercised the new artifact workflow: candidate moments, active-word captions, render verification, social packaging, OTIO export, and the MCP server smoke test.
+
 ## Runs
 
 ### Sister Smollett
@@ -38,6 +40,15 @@ bun dist/cli/index.js review-pack examples/real-talk/projects/sister-smollett \
   --window-ms 8000
 bun dist/cli/index.js plan examples/real-talk/projects/sister-smollett
 bun dist/cli/index.js render examples/real-talk/projects/sister-smollett
+bun dist/cli/index.js find-moments examples/real-talk/projects/sister-smollett \
+  --objective "Find one complete Instagram-ready talking-head moment" \
+  --target-seconds 16 --max 5
+bun dist/cli/index.js caption examples/real-talk/projects/sister-smollett
+bun dist/cli/index.js verify examples/real-talk/projects/sister-smollett \
+  --target renders/captioned.mp4
+bun dist/cli/index.js social-package examples/real-talk/projects/sister-smollett \
+  --platform instagram
+bun dist/cli/index.js export-otio examples/real-talk/projects/sister-smollett
 bun dist/cli/index.js hyperframes-brief examples/real-talk/projects/sister-smollett
 ```
 
@@ -51,6 +62,15 @@ Result:
 - Transcript provenance: `transcribe-audio`, `mlx-whisper`, `large-v3`
 - Edit-plan segments: 1
 - Render: `renders/rough-cut.mp4`, 240x360, 15.982633s
+- Candidate moments: 3 in `analysis/highlight-candidates.json`
+- Caption events: 52 in `plans/caption-plan.json`
+- Captioned render: `renders/captioned.mp4`, 240x360, 12.012s
+- Verification report: `renders/verify-report.json`, `ok: true`
+- Verification preview frames: 3 in `renders/verify-frames/`
+- Social package: `plans/social-package.json`, `release/cover-frame.jpg`, `release/post-copy.md`
+- Social package warning: render is 240x360 and does not match the Instagram 1080x1920 style pack; use HyperFrames or an export pass for final platform sizing.
+- OTIO export: `exports/edit.otio`, `OTIO_SCHEMA: Timeline.1`
+- HyperFrames brief: `hyperframes/brief.md`
 
 HyperFrames Instagram package:
 
@@ -123,11 +143,24 @@ bun run check
 bun run build
 bun dist/cli/index.js doctor
 bun dist/cli/index.js transcribe <project>
+bun dist/cli/index.js find-moments <project>
+bun dist/cli/index.js caption <project>
+bun dist/cli/index.js verify <project>
+bun dist/cli/index.js social-package <project>
+bun dist/cli/index.js export-otio <project>
 ffprobe -v error -show_entries stream=width,height -show_entries format=duration,size -of json <render>
 ```
 
 The real talking-head pass verified:
 
 ```txt
-download real video -> init -> prepare -> transcribe -> review-pack -> observe -> plan -> render -> HyperFrames Instagram package
+download real video -> init -> prepare -> transcribe -> review-pack -> observe -> find-moments -> plan -> render -> caption -> verify -> social-package -> export-otio -> HyperFrames brief/package
 ```
+
+The MCP smoke test verified the built stdio server:
+
+```sh
+bun dist/mcp/server.js
+```
+
+Protocol-level test coverage starts the server over stdio, lists 11 tools, lists prompts, calls `doctor`, and checks validation-error behavior for missing required input.

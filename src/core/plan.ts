@@ -52,6 +52,9 @@ export function createEditPlan({
         sourceEndMs: range.startMs,
         reason: "kept range between cut ranges",
         sourceWindowIds: windowsForRange(timeline, cursor, range.startMs),
+        evidence: evidenceForRange(timeline, cursor, range.startMs),
+        confidence: 1,
+        warnings: warningsForRange(timeline, cursor, range.startMs),
       });
     }
     cursor = Math.max(cursor, range.endMs);
@@ -63,6 +66,9 @@ export function createEditPlan({
       sourceEndMs: durationMs,
       reason: "kept final range",
       sourceWindowIds: windowsForRange(timeline, cursor, durationMs),
+      evidence: evidenceForRange(timeline, cursor, durationMs),
+      confidence: 1,
+      warnings: warningsForRange(timeline, cursor, durationMs),
     });
   }
 
@@ -86,4 +92,33 @@ function windowsForRange(
   return timeline.windows
     .filter((window) => window.startMs < endMs && window.endMs > startMs)
     .map((window) => window.id);
+}
+
+function evidenceForRange(timeline: Timeline, startMs: number, endMs: number): string[] {
+  const windowIds = windowsForRange(timeline, startMs, endMs);
+  const observations = timeline.observations.filter((observation) =>
+    windowIds.includes(observation.windowId),
+  );
+  const evidence = observations.map(
+    (observation) =>
+      `${observation.id}:${observation.windowId}:${observation.editingUse}:${observation.visualSummary}`,
+  );
+  if (timeline.transcriptSegments.some((segment) => segment.startMs < endMs && segment.endMs > startMs)) {
+    evidence.push("timestamped transcript overlaps this range");
+  }
+  return evidence;
+}
+
+function warningsForRange(timeline: Timeline, startMs: number, endMs: number): string[] {
+  const warnings: string[] = [];
+  const windowIds = windowsForRange(timeline, startMs, endMs);
+  const unreviewed = timeline.windows
+    .filter((window) => windowIds.includes(window.id))
+    .filter(
+      (window) => !timeline.observations.some((observation) => observation.windowId === window.id),
+    );
+  if (unreviewed.length > 0) {
+    warnings.push(`Includes unreviewed windows: ${unreviewed.map((window) => window.id).join(", ")}`);
+  }
+  return warnings;
 }

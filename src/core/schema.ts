@@ -4,11 +4,22 @@ export const CUTROOM_VERSION = 1;
 
 export const MsSchema = z.number().int().nonnegative();
 
+export const TranscriptWordSchema = z.object({
+  id: z.string(),
+  startMs: MsSchema,
+  endMs: MsSchema,
+  text: z.string(),
+  probability: z.number().min(0).max(1).nullable().default(null),
+});
+
+export type TranscriptWord = z.infer<typeof TranscriptWordSchema>;
+
 export const TranscriptSegmentSchema = z.object({
   id: z.string(),
   startMs: MsSchema,
   endMs: MsSchema,
   text: z.string(),
+  words: z.array(TranscriptWordSchema).default([]),
 });
 
 export type TranscriptSegment = z.infer<typeof TranscriptSegmentSchema>;
@@ -120,6 +131,9 @@ export const EditSegmentSchema = z.object({
   sourceEndMs: MsSchema,
   reason: z.string(),
   sourceWindowIds: z.array(z.string()).default([]),
+  evidence: z.array(z.string()).default([]),
+  confidence: z.number().min(0).max(1).default(1),
+  warnings: z.array(z.string()).default([]),
 });
 
 export type EditSegment = z.infer<typeof EditSegmentSchema>;
@@ -133,6 +147,143 @@ export const EditPlanSchema = z.object({
 });
 
 export type EditPlan = z.infer<typeof EditPlanSchema>;
+
+export const HighlightCandidateSchema = z.object({
+  id: z.string(),
+  sourceStartMs: MsSchema,
+  sourceEndMs: MsSchema,
+  durationMs: MsSchema,
+  transcriptText: z.string(),
+  reason: z.string(),
+  evidence: z.array(z.string()).default([]),
+  warnings: z.array(z.string()).default([]),
+  score: z.number().min(0).max(1),
+  sourceWindowIds: z.array(z.string()).default([]),
+  sourceFrameIds: z.array(z.string()).default([]),
+  sourceObservationIds: z.array(z.string()).default([]),
+});
+
+export type HighlightCandidate = z.infer<typeof HighlightCandidateSchema>;
+
+export const HighlightCandidatesSchema = z.object({
+  version: z.literal(CUTROOM_VERSION),
+  createdAt: z.string(),
+  objective: z.string(),
+  targetDurationMs: MsSchema,
+  candidates: z.array(HighlightCandidateSchema),
+  warnings: z.array(z.string()).default([]),
+});
+
+export type HighlightCandidates = z.infer<typeof HighlightCandidatesSchema>;
+
+export const CaptionStyleSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  fontName: z.string(),
+  fontSize: z.number().int().positive(),
+  primaryColor: z.string(),
+  activeColor: z.string(),
+  outlineColor: z.string(),
+  backColor: z.string(),
+  outline: z.number().nonnegative(),
+  shadow: z.number().nonnegative(),
+  alignment: z.number().int().min(1).max(9),
+  marginL: z.number().int().nonnegative(),
+  marginR: z.number().int().nonnegative(),
+  marginV: z.number().int().nonnegative(),
+  maxWordsPerLine: z.number().int().positive(),
+  maxLines: z.number().int().positive(),
+});
+
+export type CaptionStyle = z.infer<typeof CaptionStyleSchema>;
+
+export const CaptionEventSchema = z.object({
+  id: z.string(),
+  startMs: MsSchema,
+  endMs: MsSchema,
+  sourceStartMs: MsSchema,
+  sourceEndMs: MsSchema,
+  text: z.string(),
+  activeWord: z.string(),
+});
+
+export type CaptionEvent = z.infer<typeof CaptionEventSchema>;
+
+export const CaptionPlanSchema = z.object({
+  version: z.literal(CUTROOM_VERSION),
+  createdAt: z.string(),
+  sourceMediaPath: z.string(),
+  targetMediaPath: z.string(),
+  subtitlePath: z.string(),
+  outputPath: z.string().nullable(),
+  format: z.enum(["ass", "srt", "vtt"]),
+  style: CaptionStyleSchema,
+  events: z.array(CaptionEventSchema),
+  warnings: z.array(z.string()).default([]),
+});
+
+export type CaptionPlan = z.infer<typeof CaptionPlanSchema>;
+
+export const VerificationCheckSchema = z.object({
+  id: z.string(),
+  status: z.enum(["pass", "warn", "fail"]),
+  message: z.string(),
+  path: z.string().optional(),
+});
+
+export type VerificationCheck = z.infer<typeof VerificationCheckSchema>;
+
+export const VerificationReportSchema = z.object({
+  version: z.literal(CUTROOM_VERSION),
+  createdAt: z.string(),
+  targetPath: z.string(),
+  ok: z.boolean(),
+  media: MediaInfoSchema.nullable(),
+  checks: z.array(VerificationCheckSchema),
+  previewFrames: z.array(FrameSchema).default([]),
+});
+
+export type VerificationReport = z.infer<typeof VerificationReportSchema>;
+
+export const PlatformSchema = z.enum(["instagram", "tiktok", "youtube-shorts", "linkedin"]);
+export type Platform = z.infer<typeof PlatformSchema>;
+
+export const PlatformStylePackSchema = z.object({
+  id: z.string(),
+  platform: PlatformSchema,
+  width: z.number().int().positive(),
+  height: z.number().int().positive(),
+  fps: z.number().positive(),
+  videoBitrate: z.string(),
+  audioBitrate: z.string(),
+  safeZone: z.object({
+    topPct: z.number().nonnegative(),
+    bottomPct: z.number().nonnegative(),
+    leftPct: z.number().nonnegative(),
+    rightPct: z.number().nonnegative(),
+  }),
+  caption: CaptionStyleSchema,
+  notes: z.array(z.string()),
+});
+
+export type PlatformStylePack = z.infer<typeof PlatformStylePackSchema>;
+
+export const SocialPackageSchema = z.object({
+  version: z.literal(CUTROOM_VERSION),
+  createdAt: z.string(),
+  platform: PlatformSchema,
+  renderPath: z.string(),
+  coverFramePath: z.string().nullable(),
+  titleOptions: z.array(z.string()),
+  postCopyPath: z.string(),
+  hashtags: z.array(z.string()),
+  stylePack: PlatformStylePackSchema,
+  sourceCandidateId: z.string().nullable(),
+  sourceTimestamps: z.array(z.string()).default([]),
+  warnings: z.array(z.string()).default([]),
+});
+
+export type SocialPackage = z.infer<typeof SocialPackageSchema>;
 
 export function emptyTimeline(): Timeline {
   return {

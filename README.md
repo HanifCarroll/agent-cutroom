@@ -2,7 +2,7 @@
 
 Agent Cutroom gives ChatGPT Codex and other coding agents a local toolbelt for video review and editing.
 
-The agent makes the editorial decisions. The CLI handles deterministic media work: probing videos, generating/importing timestamped transcripts through `transcribe-audio`, detecting silence, extracting frames/contact sheets, writing review packs, recording agent observations, creating edit plans, and rendering rough cuts with FFmpeg.
+The agent makes the editorial decisions. The CLI handles deterministic media work: probing videos, generating/importing timestamped transcripts through `transcribe-audio`, detecting silence, extracting frames/contact sheets, writing review packs, recording agent observations, finding candidate moments, creating edit plans, rendering rough cuts, burning word-timed captions, verifying renders, packaging social outputs, exporting OTIO, and preparing HyperFrames briefs.
 
 ## Why This Exists
 
@@ -15,8 +15,14 @@ raw video + transcript
   -> frames/contact-sheets
   -> review/review-pack.md
   -> agent observations
+  -> analysis/highlight-candidates.json
   -> edit-plan.json
   -> renders/rough-cut.mp4
+  -> captions/captions.ass
+  -> renders/captioned.mp4
+  -> renders/verify-report.json
+  -> plans/social-package.json
+  -> exports/edit.otio
   -> HyperFrames polish pass
 ```
 
@@ -75,6 +81,18 @@ bun dist/cli/index.js plan ./my-cut
 bun dist/cli/index.js render ./my-cut
 ```
 
+Find moments, caption, verify, and package:
+
+```sh
+bun dist/cli/index.js find-moments ./my-cut \
+  --objective "Find one complete Instagram-ready moment" \
+  --target-seconds 30
+bun dist/cli/index.js caption ./my-cut
+bun dist/cli/index.js verify ./my-cut
+bun dist/cli/index.js social-package ./my-cut --platform instagram
+bun dist/cli/index.js export-otio ./my-cut
+```
+
 Generate a HyperFrames brief for the polish pass:
 
 ```sh
@@ -96,6 +114,11 @@ agent-cutroom prepare <project>
 agent-cutroom observe <project> --window <id> --summary <text>
 agent-cutroom plan <project>
 agent-cutroom render <project>
+agent-cutroom find-moments <project>
+agent-cutroom caption <project>
+agent-cutroom verify <project>
+agent-cutroom social-package <project>
+agent-cutroom export-otio <project>
 agent-cutroom hyperframes-brief <project>
 ```
 
@@ -136,19 +159,56 @@ It also supports millisecond fields:
 
 Plain text transcripts are stored as untimed text with a warning. The CLI does not invent timestamps.
 
+Active-word captions require real word timings:
+
+```json
+{
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 1.0,
+      "text": "Hello world.",
+      "words": [
+        { "word": "Hello", "start": 0.0, "end": 0.4 },
+        { "word": "world.", "start": 0.4, "end": 1.0 }
+      ]
+    }
+  ]
+}
+```
+
 `agent-cutroom transcribe` wraps the separate `transcribe-audio` workbench. It extracts project audio to `audio/source.wav`, runs local transcription, keeps raw `txt` and `json` artifacts in `transcript/`, imports timestamped segments into `timeline.json`, records transcript provenance, and can optionally write an Obsidian/vault note through `transcribe-audio note`.
 
 ## How Vision Works
 
 There is no separate OCR service or hidden vision model.
 
-The `frames` command extracts JPEG frames and a contact sheet. The running agent inspects those images directly, then writes observations through `agent-cutroom observe`. Those observations become timeline metadata used by `plan`, `render`, and `hyperframes-brief`.
+The `frames` command extracts JPEG frames and a contact sheet. The running agent inspects those images directly, then writes observations through `agent-cutroom observe`. Those observations become timeline metadata used by `find-moments`, `plan`, `render`, `social-package`, and `hyperframes-brief`.
 
 ## HyperFrames Fit
 
 Agent Cutroom owns the raw footage workflow: timeline metadata, transcript, frames, silence, agent observations, rough cuts.
 
 HyperFrames fits after the rough cut, when the agent wants a polished composition with captions, title cards, lower thirds, callouts, pull quotes, B-roll layouts, or social-ready packaging. `agent-cutroom hyperframes-brief` exports the timeline context needed for that pass.
+
+## Artifact Contract
+
+See [docs/artifact-contract.md](docs/artifact-contract.md) for the project file contract, including transcript words, highlight candidates, caption plans, social packages, verification reports, and OTIO exports.
+
+## MCP Server
+
+Agent Cutroom includes a local stdio MCP server that wraps the CLI and exposes project artifacts as resources:
+
+```sh
+bun run build
+agent-cutroom-mcp
+```
+
+See [docs/mcp.md](docs/mcp.md) for tools, resources, prompts, and verification notes.
+
+## AI Video Workflow Research
+
+See [docs/ai-video-workflow-research.md](docs/ai-video-workflow-research.md) for research on current AI video workflows, transcript-first editing, creator style guides, open-source building blocks, agent skills, MCP surfaces, and the concrete workflow additions worth borrowing for Agent Cutroom.
 
 ## Synthetic Smoke Fixtures
 
@@ -184,4 +244,4 @@ bun run build
 
 ## Status
 
-This is an early public prototype. The stable contract is the file-based workflow: `cutroom.json`, `timeline.json`, `review/review-pack.md`, `edit-plan.json`, and rendered outputs.
+This is an early public prototype. The stable contract is the file-based workflow: `cutroom.json`, `timeline.json`, `review/review-pack.md`, `analysis/highlight-candidates.json`, `edit-plan.json`, `plans/caption-plan.json`, `plans/social-package.json`, `renders/verify-report.json`, `exports/edit.otio`, and rendered outputs.
