@@ -17,6 +17,7 @@ const baseTimeline: Timeline = {
   },
   transcriptSegments: [],
   transcriptUntimedText: null,
+  transcriptProvenance: null,
   warnings: [],
   silences: [
     { id: "silence-001", startMs: 2000, endMs: 3000, durationMs: 1000 },

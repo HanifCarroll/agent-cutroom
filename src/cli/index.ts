@@ -2,7 +2,7 @@
 import { Command } from "commander";
 import { mkdir } from "node:fs/promises";
 import { join, resolve } from "node:path";
-import { commandExists } from "../core/process.js";
+import { commandExists, runCommand } from "../core/process.js";
 import {
   createProject,
   editPlanPath,
@@ -25,6 +25,7 @@ import { EditPlanSchema, type Observation } from "../core/schema.js";
 import { createEditPlan } from "../core/plan.js";
 import { writeReviewPack } from "../core/review.js";
 import { writeHyperframesBrief } from "../core/hyperframes.js";
+import { transcribeProject } from "../core/transcribe-audio.js";
 
 const program = new Command();
 
@@ -35,11 +36,26 @@ program
   )
   .version("0.1.0");
 
-program.command("doctor").description("Check local media dependencies.").action(async () => {
-  const ffmpeg = await commandExists("ffmpeg");
-  const ffprobe = await commandExists("ffprobe");
+async function transcribeAudioDoctor(): Promise<boolean> {
+  try {
+    await runCommand("transcribe-audio", ["doctor", "--json"]);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+program.command("doctor").description("Check local media and transcript dependencies.").action(async () => {
+  const [ffmpeg, ffprobe, transcribeAudio] = await Promise.all([
+    commandExists("ffmpeg"),
+    commandExists("ffprobe"),
+    transcribeAudioDoctor(),
+  ]);
   console.log(`ffmpeg: ${ffmpeg ? "ok" : "missing"}`);
   console.log(`ffprobe: ${ffprobe ? "ok" : "missing"}`);
+  console.log(
+    `transcribe-audio: ${transcribeAudio ? "ok" : "missing"} (required for the transcribe command)`,
+  );
   if (!ffmpeg || !ffprobe) process.exitCode = 1;
 });
 
@@ -90,6 +106,48 @@ program
     await writeTimeline(project, timeline);
     console.log(`imported ${loaded.segments.length} transcript segments`);
   });
+
+program
+  .command("transcribe")
+  .argument("<project>", "Project directory")
+  .option("--backend <backend>", "transcribe-audio backend", "mlx-whisper")
+  .option("--model <model>", "transcribe-audio model", "large-v3")
+  .option("--language <language>", "Transcript language, or auto", "auto")
+  .option("--prompt <text>", "Initial prompt for names, places, or vocabulary")
+  .option("--prompt-file <path>", "Prompt file for names, places, or vocabulary")
+  .option("--preprocess", "Remove long silences before transcription", false)
+  .option("--vault-note <path>", "Optional Obsidian/vault note output path")
+  .option("--note-title <title>", "Vault note title; defaults to project title")
+  .option("--date <date>", "Vault note date, YYYY-MM-DD")
+  .option("--skip-quality", "Skip transcribe-audio quality checks", false)
+  .description("Extract project audio, run transcribe-audio, import timestamped transcript metadata, and optionally write a vault note.")
+  .action(
+    async (
+      project: string,
+      options: {
+        backend: string;
+        model: string;
+        language: string;
+        prompt?: string;
+        promptFile?: string;
+        preprocess: boolean;
+        vaultNote?: string;
+        noteTitle?: string;
+        date?: string;
+        skipQuality: boolean;
+      },
+    ) => {
+      const result = await transcribeProject(project, options);
+      console.log(`transcribed ${result.transcriptSegments} timestamped segments`);
+      console.log(`audio ${result.sourceAudioPath}`);
+      if (result.rawTextPath) console.log(`text ${result.rawTextPath}`);
+      if (result.rawJsonPath) console.log(`json ${result.rawJsonPath}`);
+      if (result.vaultNotePath) console.log(`vault note ${result.vaultNotePath}`);
+      if (result.qualityWarningCount > 0) {
+        console.log(`quality warnings ${result.qualityWarningCount}`);
+      }
+    },
+  );
 
 program
   .command("silence")

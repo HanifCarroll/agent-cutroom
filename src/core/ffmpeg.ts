@@ -1,8 +1,9 @@
 import { mkdtemp, readdir, rm, stat, writeFile } from "node:fs/promises";
-import { join, relative, resolve } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { runCommand } from "./process.js";
 import { formatTimestamp, msToSeconds, secondsToMs } from "./time.js";
+import { ensureDir } from "./files.js";
 import type { EditPlan, Frame, MediaInfo, SilenceRange } from "./schema.js";
 
 interface FfprobeStream {
@@ -118,6 +119,38 @@ export async function detectSilences({
     "-",
   ]);
   return parseSilencedetect(stderr);
+}
+
+export async function extractAudioTrack({
+  projectDir,
+  sourceRelativePath,
+  outputRelativePath,
+}: {
+  projectDir: string;
+  sourceRelativePath: string;
+  outputRelativePath: string;
+}): Promise<string> {
+  const sourcePath = resolve(projectDir, sourceRelativePath);
+  const outputPath = resolve(projectDir, outputRelativePath);
+  await ensureDir(dirname(outputPath));
+  await runCommand("ffmpeg", [
+    "-hide_banner",
+    "-loglevel",
+    "error",
+    "-nostdin",
+    "-y",
+    "-i",
+    sourcePath,
+    "-vn",
+    "-ac",
+    "1",
+    "-ar",
+    "16000",
+    "-c:a",
+    "pcm_s16le",
+    outputPath,
+  ]);
+  return outputRelativePath;
 }
 
 function frameFileName(atMs: number): string {

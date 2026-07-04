@@ -20,7 +20,7 @@ pnpm build
 examples/real-talk/scripts/download-real-talking-videos.sh
 ```
 
-These sources do not ship with timestamped transcripts in this repo. The real dogfood run intentionally did not invent transcripts; it exercised the frame, silence, review, observation, plan, render, and HyperFrames-brief workflow from real talking-person footage.
+The original real-video run did not invent transcripts. The follow-up dogfood pass used the local `transcribe-audio` workbench on `sister-smollett`, imported timestamped transcript segments into Agent Cutroom, and used those artifacts to build a HyperFrames Instagram package.
 
 ## Runs
 
@@ -32,6 +32,10 @@ node dist/cli/index.js init examples/real-talk/media/sister-smollett.webm \
   --title "Sister Smollett Interview Clip"
 node dist/cli/index.js prepare examples/real-talk/projects/sister-smollett \
   --interval-ms 2500 --max-frames 12 --window-ms 8000
+node dist/cli/index.js transcribe examples/real-talk/projects/sister-smollett \
+  --prompt "Names: Sister Circle, Jussie Smollett"
+node dist/cli/index.js review-pack examples/real-talk/projects/sister-smollett \
+  --window-ms 8000
 node dist/cli/index.js plan examples/real-talk/projects/sister-smollett
 node dist/cli/index.js render examples/real-talk/projects/sister-smollett
 node dist/cli/index.js hyperframes-brief examples/real-talk/projects/sister-smollett
@@ -43,8 +47,30 @@ Result:
 - Silence ranges: 1
 - Review windows: 3
 - Agent observations: 3
+- Transcript segments: 4
+- Transcript provenance: `transcribe-audio`, `mlx-whisper`, `large-v3`
 - Edit-plan segments: 1
 - Render: `renders/rough-cut.mp4`, 240x360, 15.982633s
+
+HyperFrames Instagram package:
+
+```sh
+cd videos/sister-smollett-instagram
+npm run check
+npx hyperframes snapshot --frames 6
+npm run render -- --quality high --output output.mp4
+ffprobe -v error -show_entries stream=width,height,r_frame_rate \
+  -show_entries format=duration,size -of json output.mp4
+```
+
+Result:
+
+- Output: `videos/sister-smollett-instagram/output.mp4`
+- Canvas: 1080x1920, 9:16 portrait
+- Duration: 16.021333s
+- Size: 14,217,464 bytes
+- HyperFrames checks: lint, validate, and inspect all passed with 0 warnings
+- Render sample sheet: `videos/sister-smollett-instagram/render-contact-sheet.jpg`
 
 ### Eugene Parker
 
@@ -96,11 +122,12 @@ Result:
 pnpm check
 pnpm build
 node dist/cli/index.js doctor
+node dist/cli/index.js transcribe <project>
 ffprobe -v error -show_entries stream=width,height -show_entries format=duration,size -of json <render>
 ```
 
 The real talking-head pass verified:
 
 ```txt
-download real video -> init -> prepare -> contact sheet review -> observe -> plan -> render -> hyperframes-brief
+download real video -> init -> prepare -> transcribe -> review-pack -> observe -> plan -> render -> HyperFrames Instagram package
 ```

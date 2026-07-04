@@ -2,7 +2,7 @@
 
 Agent Cutroom gives ChatGPT Codex and other coding agents a local toolbelt for video review and editing.
 
-The agent makes the editorial decisions. The CLI handles deterministic media work: probing videos, importing timestamped transcripts, detecting silence, extracting frames/contact sheets, writing review packs, recording agent observations, creating edit plans, and rendering rough cuts with FFmpeg.
+The agent makes the editorial decisions. The CLI handles deterministic media work: probing videos, generating/importing timestamped transcripts through `transcribe-audio`, detecting silence, extracting frames/contact sheets, writing review packs, recording agent observations, creating edit plans, and rendering rough cuts with FFmpeg.
 
 ## Why This Exists
 
@@ -11,11 +11,13 @@ Most video tools hide the timeline inside a UI. Agent Cutroom exposes the timeli
 ```txt
 raw video + transcript
   -> timeline.json
+  -> transcript/raw txt+json
   -> frames/contact-sheets
   -> review/review-pack.md
   -> agent observations
   -> edit-plan.json
   -> renders/rough-cut.mp4
+  -> HyperFrames polish pass
 ```
 
 This is designed for workflows where Codex is the editor/producer and needs tools to see, reason about, and render video.
@@ -25,6 +27,7 @@ This is designed for workflows where Codex is the editor/producer and needs tool
 - Node.js 22+
 - pnpm
 - FFmpeg and ffprobe on `PATH`
+- Optional for generated transcripts: [`transcribe-audio`](https://github.com/HanifCarroll/transcribe-audio) on `PATH`
 
 Check your machine:
 
@@ -43,6 +46,15 @@ pnpm build
 node dist/cli/index.js init ./input.mp4 --transcript ./transcript.json --out ./my-cut --title "My Cut"
 node dist/cli/index.js prepare ./my-cut
 open ./my-cut/review/review-pack.md
+```
+
+Or generate the transcript locally with the transcription-to-vault workbench:
+
+```sh
+node dist/cli/index.js init ./input.mp4 --out ./my-cut --title "My Cut"
+node dist/cli/index.js transcribe ./my-cut \
+  --prompt "Names: product names, people, places"
+node dist/cli/index.js prepare ./my-cut
 ```
 
 After inspecting the frames/contact sheet, record observations:
@@ -76,6 +88,7 @@ node dist/cli/index.js hyperframes-brief ./my-cut
 agent-cutroom doctor
 agent-cutroom init <video> --out <dir> [--transcript <path>] [--title <title>]
 agent-cutroom probe <project>
+agent-cutroom transcribe <project> [--backend mlx-whisper] [--model large-v3] [--vault-note <path>]
 agent-cutroom transcript <project>
 agent-cutroom silence <project>
 agent-cutroom frames <project>
@@ -112,6 +125,8 @@ It also supports millisecond fields:
 
 Plain text transcripts are stored as untimed text with a warning. The CLI does not invent timestamps.
 
+`agent-cutroom transcribe` wraps the separate `transcribe-audio` workbench. It extracts project audio to `audio/source.wav`, runs local transcription, keeps raw `txt` and `json` artifacts in `transcript/`, imports timestamped segments into `timeline.json`, records transcript provenance, and can optionally write an Obsidian/vault note through `transcribe-audio note`.
+
 ## How Vision Works
 
 There is no separate OCR service or hidden vision model.
@@ -145,6 +160,8 @@ examples/real-talk/scripts/download-real-talking-videos.sh
 ```
 
 The downloaded source media and generated project outputs are ignored by git. See [docs/dogfood-report.md](docs/dogfood-report.md) for the real-video dogfood run and verification results.
+
+This repo also includes a checked-in HyperFrames dogfood project at [videos/sister-smollett-instagram](videos/sister-smollett-instagram) that turns the Agent Cutroom rough cut into a 1080x1920 Instagram-ready package.
 
 ## Development
 

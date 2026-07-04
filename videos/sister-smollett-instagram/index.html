@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en" data-resolution="portrait">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <title>Sister Smollett Instagram Recut</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background: #0d1117;
+        color: #fff8ea;
+        font-family: "Montserrat", "Inter", Arial, sans-serif;
+      }
+
+      #root {
+        position: relative;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 18% 18%, rgba(247, 174, 67, 0.28), transparent 34%),
+          radial-gradient(circle at 82% 70%, rgba(78, 216, 255, 0.18), transparent 30%),
+          #0d1117;
+      }
+
+      #root::before {
+        content: "";
+        position: absolute;
+        inset: -90px;
+        background:
+          linear-gradient(rgba(13, 17, 23, 0.32), rgba(13, 17, 23, 0.62)),
+          url("assets/background.jpg") center / cover no-repeat;
+        filter: blur(32px) saturate(1.18);
+        transform: scale(1.08);
+      }
+
+      .clip {
+        position: absolute;
+      }
+
+      .video-main {
+        left: 120px;
+        top: 104px;
+        width: 840px;
+        height: 1260px;
+        object-fit: cover;
+        border-radius: 34px;
+        border: 4px solid rgba(255, 248, 234, 0.82);
+        box-shadow: 0 42px 110px rgba(0, 0, 0, 0.55);
+      }
+
+      .grain {
+        inset: 0;
+        opacity: 0.13;
+        mix-blend-mode: screen;
+        background-image:
+          linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+        background-size: 54px 54px;
+      }
+
+      .top-meta {
+        left: 70px;
+        top: 38px;
+        width: 940px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-family: "JetBrains Mono", "Space Mono", monospace;
+        font-size: 22px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: rgba(255, 248, 234, 0.78);
+      }
+
+      .ticker {
+        right: 58px;
+        top: 116px;
+        writing-mode: vertical-rl;
+        font-family: "JetBrains Mono", "Space Mono", monospace;
+        font-size: 18px;
+        letter-spacing: 0.18em;
+        color: rgba(255, 248, 234, 0.72);
+      }
+
+      .caption-card {
+        left: 54px;
+        bottom: 62px;
+        width: 972px;
+        min-height: 414px;
+        padding: 36px 40px 34px;
+        border-radius: 34px;
+        background: rgba(13, 17, 23, 0.78);
+        border: 2px solid rgba(255, 248, 234, 0.34);
+        box-shadow: 0 28px 80px rgba(0, 0, 0, 0.44);
+        backdrop-filter: blur(22px);
+      }
+
+      .caption-card::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        height: 10px;
+        border-radius: 34px 34px 0 0;
+        background: linear-gradient(90deg, #f7ae43, #4ed8ff, #fff8ea);
+      }
+
+      .kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 18px;
+        font-family: "JetBrains Mono", "Space Mono", monospace;
+        font-size: 20px;
+        line-height: 1;
+        letter-spacing: 0.12em;
+        color: #f7ae43;
+        text-transform: uppercase;
+      }
+
+      .kicker::before {
+        content: "";
+        display: block;
+        width: 44px;
+        height: 4px;
+        border-radius: 999px;
+        background: #f7ae43;
+      }
+
+      .title {
+        max-width: 890px;
+        font-family: "League Gothic", "Oswald", sans-serif;
+        font-size: 100px;
+        line-height: 0.92;
+        letter-spacing: 0.01em;
+        text-transform: uppercase;
+        color: #fff8ea;
+      }
+
+      .detail {
+        margin-top: 22px;
+        max-width: 860px;
+        font-size: 40px;
+        line-height: 1.18;
+        font-weight: 700;
+        color: rgba(255, 248, 234, 0.92);
+      }
+
+      .quote {
+        margin-top: 24px;
+        display: inline-block;
+        padding: 16px 20px 12px;
+        border-radius: 18px;
+        background: #fff8ea;
+        color: #111827;
+        font-family: "League Gothic", "Oswald", sans-serif;
+        font-size: 88px;
+        line-height: 0.9;
+        letter-spacing: 0.01em;
+        text-transform: uppercase;
+      }
+
+      .meter {
+        left: 88px;
+        top: 1412px;
+        width: 904px;
+        height: 16px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 248, 234, 0.32);
+        overflow: hidden;
+        background: rgba(255, 248, 234, 0.12);
+      }
+
+      .meter-fill {
+        width: 0;
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #f7ae43, #4ed8ff);
+      }
+
+      .source-bug {
+        left: 72px;
+        top: 1314px;
+        display: inline-flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 18px;
+        border-radius: 999px;
+        color: #111827;
+        background: rgba(255, 248, 234, 0.9);
+        font-family: "JetBrains Mono", "Space Mono", monospace;
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .source-bug span {
+        width: 14px;
+        height: 14px;
+        border-radius: 999px;
+        background: #ef4444;
+        box-shadow: 0 0 0 7px rgba(239, 68, 68, 0.18);
+      }
+
+      .card {
+        opacity: 0;
+      }
+
+      .card-1 {
+        opacity: 1;
+      }
+
+      .card-4 .title {
+        font-size: 122px;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="15.982"
+      data-width="1080"
+      data-height="1920"
+      data-fps="30"
+    >
+      <video
+        id="video-main"
+        class="clip video-main"
+        src="assets/input-video.mp4"
+        data-start="0"
+        data-duration="15.982"
+        data-track-index="0"
+        muted
+        playsinline
+      ></video>
+      <audio
+        id="voice"
+        class="clip"
+        src="assets/input-video.mp4"
+        data-start="0"
+        data-duration="15.982"
+        data-track-index="20"
+        data-volume="1"
+      ></audio>
+
+      <div id="grain" class="clip grain" data-start="0" data-duration="15.982" data-track-index="2"></div>
+      <div id="top-meta" class="clip top-meta" data-start="0" data-duration="15.982" data-track-index="4">
+        <span>Agent Cutroom</span>
+        <span>real talking-head test</span>
+      </div>
+      <div id="ticker" class="clip ticker" data-start="0" data-duration="15.982" data-track-index="5">
+        transcript / silence / vision / edit
+      </div>
+      <div id="source-bug" class="clip source-bug" data-start="0.2" data-duration="15.2" data-track-index="6">
+        <span></span> produced cut
+      </div>
+      <div id="meter" class="clip meter" data-start="0" data-duration="15.982" data-track-index="7">
+        <div id="meter-fill" class="meter-fill"></div>
+      </div>
+
+      <section id="card-1" class="clip caption-card card card-1" data-start="0" data-duration="4.86" data-track-index="10">
+        <div class="kicker">Opening beat</div>
+        <div class="title">Every answer goes back to her mother</div>
+        <div class="detail">“Every single question somehow goes back to my mother.”</div>
+      </section>
+
+      <section id="card-2" class="clip caption-card card card-2" data-start="5.1" data-duration="3.68" data-track-index="11">
+        <div class="kicker">Memory cue</div>
+        <div class="title">The phrase she grew up hearing</div>
+        <div class="detail">A family saying becomes the spine of the story.</div>
+      </section>
+
+      <section id="card-3" class="clip caption-card card card-3" data-start="8.8" data-duration="3" data-track-index="12">
+        <div class="kicker">Turn</div>
+        <div class="title">“The thing mommy always says”</div>
+        <div class="detail">The clip tightens around one repeated lesson.</div>
+      </section>
+
+      <section id="card-4" class="clip caption-card card card-4" data-start="11.82" data-duration="3.95" data-track-index="13">
+        <div class="kicker">Pull quote</div>
+        <div class="title">Honor honesty</div>
+        <div class="quote">Honor honesty</div>
+      </section>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+
+      tl.from("#top-meta", { opacity: 0, y: -18, duration: 0.45, ease: "power2.out", overwrite: "auto" }, 0.1);
+      tl.from("#source-bug", { opacity: 0, x: -30, duration: 0.45, ease: "power2.out", overwrite: "auto" }, 0.45);
+      tl.fromTo("#meter-fill", { width: "0%" }, { width: "100%", duration: 15.5, ease: "none" }, 0.25);
+
+      tl.to("#card-1", { opacity: 0, y: -24, duration: 0.28, ease: "power2.in", overwrite: "auto" }, 4.56);
+
+      for (const id of ["#card-2", "#card-3", "#card-4"]) {
+        const el = document.querySelector(id);
+        const start = Number(el.dataset.start);
+        const duration = Number(el.dataset.duration);
+        tl.fromTo(id, { opacity: 0, y: 56, scale: 0.97 }, { opacity: 1, y: 0, scale: 1, duration: 0.38, ease: "power3.out", overwrite: "auto" }, start);
+        tl.from(`${id} .kicker`, { opacity: 0, x: -22, duration: 0.28, ease: "power2.out", overwrite: "auto" }, start + 0.08);
+        tl.from(`${id} .title`, { opacity: 0, y: 26, duration: 0.38, ease: "power3.out", overwrite: "auto" }, start + 0.16);
+        tl.from(`${id} .detail, ${id} .quote`, { opacity: 0, y: 18, duration: 0.32, ease: "power2.out", overwrite: "auto" }, start + 0.34);
+        tl.to(id, { opacity: 0, y: -24, duration: 0.28, ease: "power2.in", overwrite: "auto" }, start + duration - 0.3);
+      }
+
+      tl.to("#video-main", { boxShadow: "0 54px 130px rgba(0,0,0,0.68)", duration: 0.5, yoyo: true, repeat: 1, ease: "power2.inOut", overwrite: "auto" }, 11.82);
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

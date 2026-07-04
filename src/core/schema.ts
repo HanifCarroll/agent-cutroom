@@ -13,6 +13,20 @@ export const TranscriptSegmentSchema = z.object({
 
 export type TranscriptSegment = z.infer<typeof TranscriptSegmentSchema>;
 
+export const TranscriptProvenanceSchema = z.object({
+  tool: z.string(),
+  createdAt: z.string(),
+  sourceAudioPath: z.string(),
+  rawTextPath: z.string().nullable(),
+  rawJsonPath: z.string().nullable(),
+  vaultNotePath: z.string().nullable(),
+  backend: z.string().nullable(),
+  model: z.string().nullable(),
+  qualityWarnings: z.array(z.record(z.string(), z.unknown())).default([]),
+});
+
+export type TranscriptProvenance = z.infer<typeof TranscriptProvenanceSchema>;
+
 export const SilenceRangeSchema = z.object({
   id: z.string(),
   startMs: MsSchema,
@@ -90,6 +104,7 @@ export const TimelineSchema = z.object({
   media: MediaInfoSchema.nullable(),
   transcriptSegments: z.array(TranscriptSegmentSchema),
   transcriptUntimedText: z.string().nullable(),
+  transcriptProvenance: TranscriptProvenanceSchema.nullable().default(null),
   warnings: z.array(z.string()),
   silences: z.array(SilenceRangeSchema),
   frames: z.array(FrameSchema),
@@ -125,6 +140,7 @@ export function emptyTimeline(): Timeline {
     media: null,
     transcriptSegments: [],
     transcriptUntimedText: null,
+    transcriptProvenance: null,
     warnings: [],
     silences: [],
     frames: [],

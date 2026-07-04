@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 3,
+  "composition": {
+    "fps": 30,
+    "width": 1080,
+    "height": 1920,
+    "durationSeconds": 15.982,
+    "layout": "portrait",
+    "themeId": "noir",
+    "seed": 42
+  },
+  "videoTrack": {
+    "sourcePath": "assets/input-video.mp4",
+    "startSec": 0,
+    "endSec": 15.982,
+    "bounds": {
+      "x": 120,
+      "y": 104,
+      "width": 840,
+      "height": 1260
+    }
+  },
+  "subtitles": {
+    "enabled": true,
+    "mode": "designed-segment-cards"
+  },
+  "sourceArtifacts": {
+    "agentCutroomProject": "../../examples/real-talk/projects/sister-smollett",
+    "transcriptJson": "../../examples/real-talk/projects/sister-smollett/transcript/source-large-v3-transcript.json",
+    "editPlan": "../../examples/real-talk/projects/sister-smollett/edit-plan.json",
+    "roughCut": "../../examples/real-talk/projects/sister-smollett/renders/rough-cut.mp4"
+  },
+  "cards": [
+    {
+      "id": "card-1",
+      "intent": "Open with the human hook from the transcript.",
+      "startSec": 0,
+      "endSec": 4.86,
+      "accentIndex": 0,
+      "zone": "lower-third",
+      "contentHints": {
+        "kicker": "Opening beat",
+        "title": "Every answer goes back to her mother",
+        "quote": "Every single question somehow goes back to my mother."
+      }
+    },
+    {
+      "id": "card-2",
+      "intent": "Name the memory cue and keep the speaker visible.",
+      "startSec": 5.1,
+      "endSec": 8.78,
+      "accentIndex": 1,
+      "zone": "lower-third",
+      "contentHints": {
+        "kicker": "Memory cue",
+        "title": "The phrase she grew up hearing",
+        "detail": "A family saying becomes the spine of the story."
+      }
+    },
+    {
+      "id": "card-3",
+      "intent": "Set up the repeated family line.",
+      "startSec": 8.8,
+      "endSec": 11.8,
+      "accentIndex": 2,
+      "zone": "lower-third",
+      "contentHints": {
+        "kicker": "Turn",
+        "title": "The thing mommy always says",
+        "detail": "The clip tightens around one repeated lesson."
+      }
+    },
+    {
+      "id": "card-4",
+      "intent": "Close on the pull quote.",
+      "startSec": 11.82,
+      "endSec": 15.77,
+      "accentIndex": 3,
+      "zone": "lower-third",
+      "contentHints": {
+        "kicker": "Pull quote",
+        "title": "Honor honesty",
+        "quote": "Honor honesty"
+      }
+    }
+  ]
+}

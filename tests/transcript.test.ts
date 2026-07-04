@@ -43,4 +43,29 @@ describe("loadTranscript", () => {
       await rm(dir, { recursive: true, force: true });
     }
   });
+
+  it("loads whisper.cpp JSON transcription offsets", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "agent-cutroom-test-"));
+    try {
+      const path = join(dir, "transcript.json");
+      await writeFile(
+        path,
+        JSON.stringify({
+          transcription: [
+            {
+              offsets: { from: 1500, to: 2750 },
+              text: " short clip ",
+            },
+          ],
+        }),
+      );
+      const loaded = await loadTranscript(path);
+      expect(loaded.segments).toEqual([
+        { id: "seg-0001", startMs: 1500, endMs: 2750, text: "short clip" },
+      ]);
+      expect(loaded.warnings).toEqual([]);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
 });
