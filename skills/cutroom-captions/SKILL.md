@@ -40,5 +40,5 @@ cutroom verify "$PROJECT" --target renders/captioned.mp4
 - `captions/captions.ass` exists.
 - `renders/captioned.mp4` exists when burn-in was requested.
 - Preview frames show readable captions with the active word highlighted.
-- Caption phrases are short enough for mobile: roughly two lines, no more than the style pack's word limit, and not a full sentence block.
+- Caption phrases are short enough for mobile: by default, one large word at a time in the lower third, not a full sentence block.
 - Captions should stay on screen continuously across normal word gaps and change text only at the next word or an intentional pause.

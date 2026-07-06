@@ -30,6 +30,12 @@ interface CandidateScore {
   warnings: string[];
 }
 
+interface PersonalTailTrim {
+  endMs: number;
+  pattern: string;
+  sentenceEndText: string;
+}
+
 export const TALKING_HEAD_STORY_RECIPE = {
   id: "talking-head-story",
   version: 1,
@@ -126,6 +132,19 @@ function hookScore(text: string, profile: ContentProfile): number {
 function payoffScore(text: string, profile: ContentProfile): number {
   const lower = text.toLowerCase();
   return Math.min(1, profile.payoffSignals.filter((signal) => includesPhrase(lower, signal)).length / 3);
+}
+
+function audienceValueScore(text: string, profile: ContentProfile): number {
+  const lower = text.toLowerCase();
+  return Math.min(1, profile.audienceValueSignals.filter((signal) => includesPhrase(lower, signal)).length / 3);
+}
+
+function personalDetailTailPenalty(text: string, profile: ContentProfile): number {
+  if (profile.personalDetailPatterns.length === 0) return 0;
+  const sentences = sentenceSplit(text);
+  const tail = (sentences.length > 1 ? sentences.slice(Math.floor(sentences.length * 0.55)) : sentences).join(" ").toLowerCase();
+  const hits = profile.personalDetailPatterns.filter((pattern) => includesPhrase(tail, pattern)).length;
+  return Math.min(0.3, hits * 0.08);
 }
 
 function durationFit(durationMs: number, targetMs: number, minMs: number, maxMs: number): number {
@@ -242,13 +261,24 @@ function scoreCandidate({
   const duration = durationFit(durationMs, targetDurationMs, minDurationMs, maxDurationMs);
   const hook = hookScore(text, profile);
   const payoff = payoffScore(text, profile);
+  const audienceValue = audienceValueScore(text, profile);
+  const personalTail = personalDetailTailPenalty(text, profile);
   const filler = fillerPenalty(text, profile);
   const opening = openingPenalty(text);
   const frameScore = hasFrames ? 0.04 : 0;
   const windowScore = hasWindows ? 0.03 : 0;
   const baseScore = Math.max(
     0,
-    0.33 * themeResult.score + 0.2 * hook + 0.2 * payoff + 0.2 * duration + frameScore + windowScore - filler - opening,
+    0.31 * themeResult.score +
+      0.18 * hook +
+      0.2 * payoff +
+      0.12 * audienceValue +
+      0.19 * duration +
+      frameScore +
+      windowScore -
+      filler -
+      opening -
+      personalTail,
   );
   const score = Math.min(1, baseScore * themeResult.theme.priority + exactUseCaseBoost(text, profile));
   const evidence = [
@@ -256,8 +286,10 @@ function scoreCandidate({
     `duration fit: ${duration.toFixed(2)}`,
     `hook score: ${hook.toFixed(2)}`,
     `payoff score: ${payoff.toFixed(2)}`,
+    `audience value score: ${audienceValue.toFixed(2)}`,
   ];
   if (opening > 0) evidence.push(`opening penalty: ${opening.toFixed(2)}`);
+  if (personalTail > 0) evidence.push(`personal detail tail penalty: ${personalTail.toFixed(2)}`);
   const warnings: string[] = [];
   if (filler >= 0.14) warnings.push("High filler density; likely needs tightening before publishing.");
   if (durationMs > targetDurationMs * 1.35) warnings.push("Longer than target; clip should be tightened.");
@@ -265,6 +297,7 @@ function scoreCandidate({
   if (!hasWindows) warnings.push("No review windows overlap this span; run prepare for stronger evidence.");
   if (!hasFrames) warnings.push("No sampled frames overlap this span; inspect visuals before publishing.");
   if (opening >= 0.18) warnings.push("Opening looks mid-sentence; prefer a cleaner start before rendering.");
+  if (personalTail >= 0.16) warnings.push("Tail shifts into personal process details after the listener-facing lesson lands.");
   return { score, theme: themeResult.theme, themeScore: themeResult.score, evidence, warnings };
 }
 
@@ -283,6 +316,20 @@ function timelineWords(timeline: Timeline) {
     .sort((a, b) => a.startMs - b.startMs || a.endMs - b.endMs);
 }
 
+function normalizeToken(text: string): string {
+  return text.toLowerCase().replace(/^[^\w']+|[^\w']+$/g, "");
+}
+
+function patternTokens(pattern: string): string[] {
+  return pattern.split(/\s+/).map(normalizeToken).filter(Boolean);
+}
+
+function wordsMatchPattern(words: ReturnType<typeof timelineWords>, startIndex: number, pattern: string): boolean {
+  const tokens = patternTokens(pattern);
+  if (tokens.length === 0 || startIndex + tokens.length > words.length) return false;
+  return tokens.every((token, offset) => normalizeToken(words[startIndex + offset]?.text ?? "") === token);
+}
+
 function cleanLeadStartMs(timeline: Timeline, candidateStartMs: number, requestedStartMs: number): number {
   const words = timelineWords(timeline);
   const crossedWords = words.filter(
@@ -296,6 +343,32 @@ function cleanLeadStartMs(timeline: Timeline, candidateStartMs: number, requeste
   if (sentenceEnd) return Math.max(requestedStartMs, sentenceEnd.endMs);
   if (crossedWords.length > 0) return candidateStartMs;
   return requestedStartMs;
+}
+
+function personalTailTrim(
+  timeline: Timeline,
+  candidate: StoryCandidate,
+  profile: ContentProfile,
+  minDurationMs: number,
+): PersonalTailTrim | null {
+  if (profile.personalDetailPatterns.length === 0) return null;
+  const words = timelineWords(timeline).filter(
+    (word) => word.startMs >= candidate.sourceStartMs && word.endMs <= candidate.sourceEndMs,
+  );
+  const minEndMs = candidate.sourceStartMs + minDurationMs;
+  for (const [index, word] of words.entries()) {
+    if (word.startMs < minEndMs) continue;
+    const pattern = profile.personalDetailPatterns.find((item) => wordsMatchPattern(words, index, item));
+    if (!pattern) continue;
+    const sentenceEnd = [...words.slice(0, index)].reverse().find((item) => sentenceEnds(item.text));
+    if (!sentenceEnd || sentenceEnd.endMs < minEndMs) continue;
+    return {
+      endMs: sentenceEnd.endMs,
+      pattern,
+      sentenceEndText: sentenceEnd.text,
+    };
+  }
+  return null;
 }
 
 function platformFit(artifacts: SuggestedArtifact[]): string[] {
@@ -464,7 +537,10 @@ function createSelectedEditPlan(options: ResolvedContentPackageOptions, candidat
   const sourceEnd = options.timeline.media?.durationMs ?? candidate.sourceEndMs;
   const requestedStartMs = Math.max(0, candidate.sourceStartMs - options.leadPaddingMs);
   const startMs = cleanLeadStartMs(options.timeline, candidate.sourceStartMs, requestedStartMs);
-  const endMs = Math.min(sourceEnd, candidate.sourceEndMs + options.tailPaddingMs);
+  const tailTrim = personalTailTrim(options.timeline, candidate, options.profile, options.minDurationMs);
+  const selectedEndMs = tailTrim?.endMs ?? candidate.sourceEndMs;
+  const tailPaddingMs = tailTrim ? 80 : options.tailPaddingMs;
+  const endMs = Math.min(sourceEnd, selectedEndMs + tailPaddingMs);
   const segment: EditSegment = {
     id: "clip-001",
     sourceStartMs: startMs,
@@ -477,6 +553,12 @@ function createSelectedEditPlan(options: ResolvedContentPackageOptions, candidat
       `theme: ${candidate.themeLabel}`,
       `score: ${candidate.score}`,
       ...candidate.evidence,
+      ...(tailTrim
+        ? [
+            `trimmed personal-process tail before "${tailTrim.pattern}"`,
+            `listener-facing lesson ends at ${formatTimestamp(tailTrim.endMs)} after "${tailTrim.sentenceEndText}"`,
+          ]
+        : []),
     ],
     confidence: candidate.confidence,
     warnings: candidate.warnings,

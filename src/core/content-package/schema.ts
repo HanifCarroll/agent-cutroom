@@ -70,6 +70,8 @@ export const ContentProfileSchema = z.object({
   fillerPatterns: z.array(z.string().min(1)).default([]),
   payoffSignals: z.array(z.string().min(1)).default([]),
   pointSignals: z.array(z.string().min(1)).default([]),
+  audienceValueSignals: z.array(z.string().min(1)).default([]),
+  personalDetailPatterns: z.array(z.string().min(1)).default([]),
   transcriptReplacements: z.array(TranscriptReplacementSchema).default([]),
   titleRules: z.array(TitleRuleSchema).default([]),
   exactBoosts: z.array(BoostRuleSchema).default([]),

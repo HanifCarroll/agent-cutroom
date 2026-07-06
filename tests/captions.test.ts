@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createCaptionPlan, renderAss } from "../src/core/captions.js";
-import type { EditPlan, Timeline } from "../src/core/schema.js";
+import { DEFAULT_CAPTION_STYLE } from "../src/core/style-packs.js";
+import type { CaptionStyle, EditPlan, Timeline } from "../src/core/schema.js";
 
 const timeline: Timeline = {
   version: 1,
@@ -107,10 +108,18 @@ describe("captions", () => {
       format: "ass",
       editPlan: null,
     });
-    expect(renderAss(plan)).toContain("{\\c&H0000E5FF\\b1}first");
+    expect(plan.style.id).toBe("single-word-pop");
+    expect(plan.style.maxWordsPerLine).toBe(1);
+    expect(renderAss(plan)).toContain("{\\c&H00FFFFFF\\b1}first");
   });
 
   it("breaks ASS caption lines at the style word limit", async () => {
+    const twoLineStyle: CaptionStyle = {
+      ...DEFAULT_CAPTION_STYLE,
+      maxWordsPerLine: 3,
+      maxLines: 2,
+      activeColor: "&H00FFFFFF",
+    };
     const plan = await createCaptionPlan({
       projectDir: ".",
       timeline: {
@@ -133,10 +142,11 @@ describe("captions", () => {
       subtitlePath: "captions/captions.ass",
       outputPath: null,
       format: "ass",
+      style: twoLineStyle,
       editPlan: null,
     });
 
-    expect(renderAss(plan)).toContain("first second third\\N{\\c&H0000E5FF\\b1}fourth");
+    expect(renderAss(plan)).toContain("first second third\\N{\\c&H00FFFFFF\\b1}fourth");
   });
 
   it("warns instead of inventing word timings", async () => {

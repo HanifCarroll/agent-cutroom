@@ -110,10 +110,10 @@ describe("content package", () => {
     expect(result.storyCandidates.candidates.length).toBeGreaterThan(0);
     expect(result.selectedCandidate?.suggestedArtifacts).toContain("clip");
     expect(result.selectedCandidate?.theme).toBe("public-building-proof");
-    expect(result.selectedCandidate?.id).toBe("story-000000000-000055000");
+    expect(result.selectedCandidate?.id).toBe("story-000000000-000085000");
     expect(result.editPlan?.segments).toHaveLength(1);
     expect(result.editPlan?.segments[0]?.sourceStartMs).toBe(0);
-    expect(result.editPlan?.segments[0]?.sourceEndMs).toBe(56_200);
+    expect(result.editPlan?.segments[0]?.sourceEndMs).toBe(86_200);
     expect(result.editPlan?.segments[0]?.sourceWindowIds).toContain("window-001");
     expect(result.inventoryMarkdown).toContain("Recipe: talking-head-story v1");
     expect(result.selectionMarkdown).toContain("## Selected Candidate");
@@ -169,6 +169,64 @@ describe("content package", () => {
 
     expect(result.editPlan?.segments[0]?.sourceStartMs).toBe(1_000);
     expect(result.editPlan?.segments[0]?.sourceStartMs).toBeGreaterThan(400);
+  });
+
+  it("trims personal-process tail after the listener-facing lesson lands", () => {
+    const timeline: Timeline = {
+      ...contentPackageTimeline,
+      media: { ...contentPackageTimeline.media!, durationMs: 60_000 },
+      transcriptSegments: [
+        {
+          id: "seg-lesson",
+          startMs: 0,
+          endMs: 42_000,
+          text: "So in sales, your message needs to be very specific. Who is this for? What does it do? Better to do one thing well. So specificity is the name of the game.",
+          words: [
+            { id: "lesson-1", startMs: 0, endMs: 400, text: "So", probability: 0.99 },
+            { id: "lesson-2", startMs: 400, endMs: 900, text: "in", probability: 0.99 },
+            { id: "lesson-3", startMs: 900, endMs: 1_400, text: "sales,", probability: 0.99 },
+            { id: "lesson-4", startMs: 30_000, endMs: 30_400, text: "So", probability: 0.99 },
+            { id: "lesson-5", startMs: 30_400, endMs: 31_200, text: "specificity", probability: 0.99 },
+            { id: "lesson-6", startMs: 31_200, endMs: 31_500, text: "is", probability: 0.99 },
+            { id: "lesson-7", startMs: 31_500, endMs: 31_800, text: "the", probability: 0.99 },
+            { id: "lesson-8", startMs: 31_800, endMs: 32_100, text: "name", probability: 0.99 },
+            { id: "lesson-9", startMs: 32_100, endMs: 32_300, text: "of", probability: 0.99 },
+            { id: "lesson-10", startMs: 32_300, endMs: 32_500, text: "the", probability: 0.99 },
+            { id: "lesson-11", startMs: 32_500, endMs: 33_000, text: "game.", probability: 0.99 },
+          ],
+        },
+        {
+          id: "seg-tail",
+          startMs: 42_000,
+          endMs: 52_000,
+          text: "So I got specific on the ICP and I did that today. I was looking at creating a kind of curriculum for my consulting.",
+          words: [
+            { id: "tail-1", startMs: 42_000, endMs: 42_200, text: "So", probability: 0.99 },
+            { id: "tail-2", startMs: 42_200, endMs: 42_400, text: "I", probability: 0.99 },
+            { id: "tail-3", startMs: 42_400, endMs: 42_700, text: "got", probability: 0.99 },
+            { id: "tail-4", startMs: 42_700, endMs: 43_200, text: "specific", probability: 0.99 },
+          ],
+        },
+      ],
+    };
+
+    const result = buildContentPackage({
+      timeline,
+      sourcePath: "source/source.mov",
+      title: "Listener Lesson Test",
+      recipe: TALKING_HEAD_STORY_RECIPE,
+      profile: HANIF_CONTENT_PROFILE,
+      targetDurationMs: 52_000,
+      minDurationMs: 30_000,
+      maxDurationMs: 60_000,
+      maxCandidates: 2,
+      selectedId: "story-000000000-000052000",
+      leadPaddingMs: 0,
+      tailPaddingMs: 1200,
+    });
+
+    expect(result.editPlan?.segments[0]?.sourceEndMs).toBe(33_080);
+    expect(result.editPlan?.segments[0]?.evidence).toContain('trimmed personal-process tail before "so i got"');
   });
 
   it("fails loudly when a forced selection is missing", () => {
