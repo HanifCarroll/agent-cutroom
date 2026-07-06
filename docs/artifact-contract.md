@@ -73,6 +73,7 @@ project/
 - `analysis/story-selection.md`: selected story summary with hook, point, evidence, warnings, and the selected edit-plan segment.
 - `edit-plan.json`: keep segments. Each segment has source timing, reason, source windows, evidence, confidence, and warnings.
 - `plans/short-form-pacing.json`: source edit plan path, output edit plan path, pacing options, before/after duration, exact removed pause ranges, and protected rhetorical pauses.
+- `review/cut-review.md`: agent-authored boundary QA with reviewed cut timestamps, transcript phrases, pass/fix decisions, edit-plan patches, and remaining risks.
 - `plans/color-grade.json`: highlight-protected subject-mask shadow-lift method, FFmpeg filter graph, subject and luma mask geometry, grade settings, preview frame paths, and output path.
 - `plans/caption-plan.json`: subtitle format, target media, style, events, warnings, and optional burned output path.
 - `plans/social-package.json`: platform, style pack, render path, cover frame, title options, hashtags, source timestamps, and warnings.

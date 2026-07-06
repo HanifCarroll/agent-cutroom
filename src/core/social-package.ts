@@ -223,6 +223,11 @@ export async function createSocialPackage(options: CreateSocialPackageOptions): 
   } else {
     warnings.push("Could not confirm render dimensions for the social package.");
   }
+  if (typeof media?.fps === "number" && Math.abs(media.fps - stylePack.fps) > 1) {
+    warnings.push(
+      `Render fps ${media.fps.toFixed(2)} does not match ${options.platform} style pack ${stylePack.fps}fps. Export at the platform frame rate before publishing.`,
+    );
+  }
 
   return SocialPackageSchema.parse({
     version: CUTROOM_VERSION,

@@ -550,8 +550,9 @@ function renderInventory(options: ResolvedContentPackageOptions, storyCandidates
     "1. Run `agent-cutroom prepare <project>` to refresh transcript windows, frames, silences, and the review pack.",
     `2. Run \`agent-cutroom content-package <project> --recipe ${options.recipe.id} --profile ${options.profile.id}\` to write this inventory, story candidates, story selection, and the selected edit plan.`,
     "3. Inspect `review/content-inventory.md`, `analysis/story-candidates.json`, and `analysis/story-selection.md`.",
-    "4. Run `agent-cutroom render <project>` only after the selected story is acceptable.",
-    "5. Run `agent-cutroom caption <project>`, `agent-cutroom verify <project>`, and `agent-cutroom social-package <project> --platform linkedin` for a publishable package.",
+    "4. Run `agent-cutroom shortform-pacing <project>`, then use `cutroom-cut-review` to approve or patch risky boundaries.",
+    "5. Run `agent-cutroom render <project>` only after the selected story and reviewed cuts are acceptable.",
+    "6. Run `agent-cutroom caption <project>`, `agent-cutroom verify <project>`, and `agent-cutroom social-package <project> --platform linkedin` for a publishable package.",
     "",
   );
 

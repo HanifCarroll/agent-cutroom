@@ -7,6 +7,7 @@ import {
   TALKING_HEAD_STORY_RECIPE,
   buildContentPackage,
 } from "../src/core/content-package/index.js";
+import { ffprobeMedia } from "../src/core/ffmpeg.js";
 import { createSocialPackage } from "../src/core/social-package.js";
 import type { HighlightCandidates, Timeline } from "../src/core/schema.js";
 
@@ -123,5 +124,30 @@ describe("createSocialPackage", () => {
     expect(postCopy).not.toContain("stale highlight transcript text");
     expect(postCopy).not.toContain("story-001");
     expect(socialPackage.titleOptions).toContain(storyCandidate.title);
+  });
+
+  it("warns when the render matches social dimensions but not the style-pack fps", async () => {
+    vi.mocked(ffprobeMedia).mockResolvedValueOnce({
+      path: "renders/captioned.mp4",
+      durationMs: 56_200,
+      width: 1080,
+      height: 1920,
+      fps: 59.94,
+      hasAudio: true,
+      hasVideo: true,
+      sizeBytes: 100,
+      formatName: "mov,mp4",
+    });
+
+    const socialPackage = await createSocialPackage({
+      projectDir,
+      timeline,
+      platform: "instagram",
+      renderPath: "renders/captioned.mp4",
+    });
+
+    expect(socialPackage.warnings).toEqual([
+      "Render fps 59.94 does not match instagram style pack 30fps. Export at the platform frame rate before publishing.",
+    ]);
   });
 });

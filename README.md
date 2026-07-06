@@ -96,6 +96,8 @@ bun dist/cli/index.js shortform-pacing ./my-cut
 bun dist/cli/index.js render ./my-cut
 ```
 
+Before final grade, captions, or release, use the `cutroom-cut-review` skill to audit the proposed cut boundaries and patch `edit-plan.json` when a deterministic cut clips a word, rushes a thought, or breaks a rhetorical chain.
+
 Preview and apply a highlight-protected subject shadow lift when the speaker is underexposed:
 
 ```sh
@@ -235,7 +237,7 @@ The built-in `talking-head-story` recipe owns deterministic candidate generation
 
 ## Short-Form Polish
 
-`agent-cutroom shortform-pacing` tightens the selected edit plan using transcript word timings, writing `plans/short-form-pacing.json` and updating `edit-plan.json` by default. It preserves short rhetorical question-chain pauses and skips cuts too small to justify a jump. `agent-cutroom grade-preview` and `agent-cutroom grade-apply` use a feathered FFmpeg subject mask plus a luma shadow mask to lift the speaker while protecting bright wall pixels. See [docs/short-form-polish.md](docs/short-form-polish.md).
+`agent-cutroom shortform-pacing` tightens the selected edit plan using transcript word timings, writing `plans/short-form-pacing.json` and updating `edit-plan.json` by default. It preserves short rhetorical question-chain pauses and skips cuts too small to justify a jump. Treat that as a proposed edit, not final editorial judgment: run `cutroom-cut-review` before final user-facing output. `agent-cutroom grade-preview` and `agent-cutroom grade-apply` use a feathered FFmpeg subject mask plus a luma shadow mask to lift the speaker while protecting bright wall pixels. See [docs/short-form-polish.md](docs/short-form-polish.md).
 
 ## MCP Server
 

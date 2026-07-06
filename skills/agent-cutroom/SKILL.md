@@ -102,14 +102,14 @@ cutroom find-moments "$PROJECT" --objective "$OBJECTIVE" --target-seconds "$TARG
 
 Inspect `analysis/highlight-candidates.json` before selecting a clip or trusting a recommendation.
 
-7. Tighten pacing and render.
+7. Tighten pacing, review cut boundaries, then render.
 
 ```sh
 cutroom shortform-pacing "$PROJECT"
 cutroom render "$PROJECT"
 ```
 
-Inspect `plans/short-form-pacing.json` and `edit-plan.json` before trusting the render. The pacing plan should show applied cuts and any protected rhetorical pauses. If no selected edit plan exists yet, run `plan` before `shortform-pacing`. Finish this step when `renders/rough-cut.mp4` exists and the rendered cut matches the recorded observations.
+Inspect `plans/short-form-pacing.json` and `edit-plan.json` before trusting the render. The pacing plan should show applied cuts and any protected rhetorical pauses. Use `cutroom-cut-review` before final grade, captions, release, or any user-facing export; the agent must explicitly approve or patch risky cut boundaries instead of treating deterministic pause removal as final editorial judgment. If no selected edit plan exists yet, run `plan` before `shortform-pacing`. Finish this step when `review/cut-review.md` exists, `renders/rough-cut.mp4` exists, and the rendered cut matches the recorded observations.
 
 8. Grade, caption, verify, package, and export as needed.
 
@@ -141,6 +141,7 @@ Use the focused skills when available:
 - `cutroom-review`
 - `cutroom-story-selector`
 - `cutroom-rough-cut`
+- `cutroom-cut-review`
 - `cutroom-captions`
 - `cutroom-social-package`
 - `cutroom-hyperframes-polish`

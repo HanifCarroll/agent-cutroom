@@ -53,7 +53,7 @@ This writes:
 
 The recipe is generic. The profile supplies the content themes, audience, transcript cleanup, defaults, and post-copy templates. Inspect the inventory and selected story before rendering.
 
-## 5. Tighten Pacing And Render
+## 5. Tighten Pacing, Review Cuts, And Render
 
 ```sh
 agent-cutroom shortform-pacing cutroom-project
@@ -61,6 +61,8 @@ agent-cutroom render cutroom-project
 ```
 
 `shortform-pacing` uses transcript word timings to remove long pauses from the selected edit plan and writes `plans/short-form-pacing.json`. `render` creates `renders/rough-cut.mp4`.
+
+Use the `cutroom-cut-review` skill before final grade, captions, release, or user-facing export. The skill makes the agent inspect risky boundaries, approve or patch them, and write `review/cut-review.md`.
 
 If no content package exists yet, run `plan` first to create `edit-plan.json`, then run `shortform-pacing`.
 

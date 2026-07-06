@@ -39,6 +39,12 @@ agent-cutroom shortform-pacing "$PROJECT" \
 
 If transcript word timings are missing, the command leaves the plan unchanged and writes a warning. It does not invent word timings from plain text. `plans/short-form-pacing.json` includes both applied `cuts[]` and preserved `protectedPauses[]`.
 
+## Agent Cut Review
+
+Run the `cutroom-cut-review` skill before final grade, captions, release, or any user-facing export. `shortform-pacing` proposes timing changes; the agent must still inspect whether the edit preserves complete words, natural word release, meaning, rhetorical pauses, and visual continuity.
+
+The review writes `review/cut-review.md`. If a boundary is risky, patch `edit-plan.json`, rerender the affected rough cut, and inspect that window again before continuing.
+
 ## Highlight-Protected Subject Shadow Lift
 
 `grade-preview` and `grade-apply` use FFmpeg to apply a subject-region mask combined with a luma shadow mask. The filter grades a brighter copy of the video, then merges that copy back only where both masks are active. Bright wall pixels are protected, which avoids the visible spotlight problem from a plain oval mask.
