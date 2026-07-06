@@ -60,8 +60,39 @@ describe("captions", () => {
     });
 
     expect(plan.events.map((event) => [event.activeWord, event.startMs, event.endMs])).toEqual([
-      ["second", 0, 500],
-      ["third", 1500, 2000],
+      ["second", 0, 620],
+      ["third", 1500, 2120],
+    ]);
+  });
+
+  it("keeps captions visible across normal word gaps", async () => {
+    const fastTimeline: Timeline = {
+      ...timeline,
+      transcriptSegments: [
+        {
+          ...timeline.transcriptSegments[0]!,
+          text: "first second",
+          words: [
+            { id: "w1", startMs: 0, endMs: 500, text: "first", probability: null },
+            { id: "w2", startMs: 620, endMs: 1000, text: "second", probability: null },
+          ],
+        },
+      ],
+    };
+    const plan = await createCaptionPlan({
+      projectDir: ".",
+      timeline: fastTimeline,
+      sourceMediaPath: "source/source.mp4",
+      targetMediaPath: "source/source.mp4",
+      subtitlePath: "captions/captions.ass",
+      outputPath: null,
+      format: "ass",
+      editPlan: null,
+    });
+
+    expect(plan.events.map((event) => [event.activeWord, event.startMs, event.endMs])).toEqual([
+      ["first", 0, 620],
+      ["second", 620, 1120],
     ]);
   });
 
@@ -77,6 +108,35 @@ describe("captions", () => {
       editPlan: null,
     });
     expect(renderAss(plan)).toContain("{\\c&H0000E5FF\\b1}first");
+  });
+
+  it("breaks ASS caption lines at the style word limit", async () => {
+    const plan = await createCaptionPlan({
+      projectDir: ".",
+      timeline: {
+        ...timeline,
+        transcriptSegments: [
+          {
+            ...timeline.transcriptSegments[0]!,
+            text: "first second third fourth",
+            words: [
+              { id: "w1", startMs: 0, endMs: 200, text: "first", probability: null },
+              { id: "w2", startMs: 200, endMs: 400, text: "second", probability: null },
+              { id: "w3", startMs: 400, endMs: 600, text: "third", probability: null },
+              { id: "w4", startMs: 600, endMs: 800, text: "fourth", probability: null },
+            ],
+          },
+        ],
+      },
+      sourceMediaPath: "source/source.mp4",
+      targetMediaPath: "source/source.mp4",
+      subtitlePath: "captions/captions.ass",
+      outputPath: null,
+      format: "ass",
+      editPlan: null,
+    });
+
+    expect(renderAss(plan)).toContain("first second third\\N{\\c&H0000E5FF\\b1}fourth");
   });
 
   it("warns instead of inventing word timings", async () => {

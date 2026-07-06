@@ -4,7 +4,7 @@ export const DEFAULT_CAPTION_STYLE: CaptionStyle = {
   id: "bold-active-word",
   name: "Bold active word",
   fontName: "Arial",
-  fontSize: 66,
+  fontSize: 84,
   primaryColor: "&H00FFFFFF",
   activeColor: "&H0000E5FF",
   outlineColor: "&H00141414",
@@ -15,7 +15,7 @@ export const DEFAULT_CAPTION_STYLE: CaptionStyle = {
   marginL: 80,
   marginR: 80,
   marginV: 220,
-  maxWordsPerLine: 6,
+  maxWordsPerLine: 3,
   maxLines: 2,
 };
 
@@ -85,7 +85,7 @@ export const PLATFORM_STYLE_PACKS: Record<Platform, PlatformStylePack> = {
     videoBitrate: "6M",
     audioBitrate: "192k",
     safeZone: { topPct: 0.08, bottomPct: 0.12, leftPct: 0.06, rightPct: 0.06 },
-    caption: { ...DEFAULT_CAPTION_STYLE, fontSize: 56, marginV: 160 },
+    caption: { ...DEFAULT_CAPTION_STYLE, fontSize: 72, marginV: 160 },
     notes: [
       "Use concise business-context captions.",
       "Prefer one complete point over a fast montage.",

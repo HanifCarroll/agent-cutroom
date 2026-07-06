@@ -23,6 +23,9 @@ interface MappedWord extends TranscriptWord {
   sourceEndMs: number;
 }
 
+const CAPTION_BREAK_GAP_MS = 900;
+const CAPTION_LINGER_MS = 120;
+
 export interface CreateCaptionPlanOptions {
   projectDir: string;
   timeline: Timeline;
@@ -76,7 +79,7 @@ function chunkWords(words: MappedWord[], maxWords: number): MappedWord[][] {
   let chunk: MappedWord[] = [];
   for (const word of words) {
     const last = chunk.at(-1);
-    if (last && (chunk.length >= maxWords || word.outputStartMs - last.outputEndMs > 900)) {
+    if (last && (chunk.length >= maxWords || word.outputStartMs - last.outputEndMs > CAPTION_BREAK_GAP_MS)) {
       chunks.push(chunk);
       chunk = [];
     }
@@ -88,12 +91,20 @@ function chunkWords(words: MappedWord[], maxWords: number): MappedWord[][] {
 
 function createEvents(words: MappedWord[], style: CaptionStyle): CaptionEvent[] {
   const events: CaptionEvent[] = [];
-  for (const chunk of chunkWords(words, style.maxWordsPerLine * style.maxLines)) {
-    for (const active of chunk) {
+  const chunks = chunkWords(words, style.maxWordsPerLine * style.maxLines);
+  for (const [chunkIndex, chunk] of chunks.entries()) {
+    const nextChunk = chunks[chunkIndex + 1] ?? null;
+    for (const [wordIndex, active] of chunk.entries()) {
+      const nextWord = chunk[wordIndex + 1] ?? nextChunk?.[0] ?? null;
+      const shouldBridge =
+        nextWord && nextWord.outputStartMs - active.outputEndMs <= CAPTION_BREAK_GAP_MS;
+      const endMs = shouldBridge
+        ? Math.max(nextWord.outputStartMs, active.outputStartMs + 10)
+        : Math.max(active.outputEndMs + CAPTION_LINGER_MS, active.outputStartMs + 80);
       events.push({
         id: `caption-${String(events.length + 1).padStart(4, "0")}`,
         startMs: active.outputStartMs,
-        endMs: Math.max(active.outputEndMs, active.outputStartMs + 80),
+        endMs,
         sourceStartMs: active.sourceStartMs,
         sourceEndMs: active.sourceEndMs,
         text: chunk.map((word) => word.text).join(" ").replace(/\s+/g, " ").trim(),
@@ -137,15 +148,18 @@ function escapeAssText(text: string): string {
 function activeAssText(event: CaptionEvent, style: CaptionStyle): string {
   const words = event.text.split(/\s+/);
   let used = false;
-  return words
-    .map((word) => {
-      if (!used && word === event.activeWord) {
-        used = true;
-        return `{\\c${style.activeColor}\\b1}${escapeAssText(word)}{\\c${style.primaryColor}\\b0}`;
-      }
-      return escapeAssText(word);
-    })
-    .join(" ");
+  const styledWords = words.map((word) => {
+    if (!used && word === event.activeWord) {
+      used = true;
+      return `{\\c${style.activeColor}\\b1}${escapeAssText(word)}{\\c${style.primaryColor}\\b0}`;
+    }
+    return escapeAssText(word);
+  });
+  const lines: string[] = [];
+  for (let index = 0; index < styledWords.length; index += style.maxWordsPerLine) {
+    lines.push(styledWords.slice(index, index + style.maxWordsPerLine).join(" "));
+  }
+  return lines.join("\\N");
 }
 
 export function renderAss(plan: CaptionPlan): string {
