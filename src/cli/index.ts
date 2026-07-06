@@ -515,6 +515,8 @@ program
   .option("--tail-out-ms <ms>", "Speech tail-out to preserve at the end of each segment", String(DEFAULT_SHORT_FORM_PACING_OPTIONS.tailOutMs))
   .option("--min-cut-ms <ms>", "Minimum removed gap duration", String(DEFAULT_SHORT_FORM_PACING_OPTIONS.minCutMs))
   .option("--min-segment-ms <ms>", "Minimum kept segment duration", String(DEFAULT_SHORT_FORM_PACING_OPTIONS.minSegmentMs))
+  .option("--protected-question-pause-ms <ms>", "Question-chain pauses at or below this duration are preserved", String(DEFAULT_SHORT_FORM_PACING_OPTIONS.protectedQuestionPauseMs))
+  .option("--protected-question-keep-pause-ms <ms>", "Pause duration to preserve when cutting a long question-chain pause", String(DEFAULT_SHORT_FORM_PACING_OPTIONS.protectedQuestionKeepPauseMs))
   .description("Tighten edit-plan.json for modern short-form pacing using transcript word timings.")
   .action(
     async (
@@ -528,6 +530,8 @@ program
         tailOutMs: string;
         minCutMs: string;
         minSegmentMs: string;
+        protectedQuestionPauseMs: string;
+        protectedQuestionKeepPauseMs: string;
       },
     ) => {
       const timeline = await readTimeline(project);
@@ -546,12 +550,15 @@ program
           tailOutMs: Number(options.tailOutMs),
           minCutMs: Number(options.minCutMs),
           minSegmentMs: Number(options.minSegmentMs),
+          protectedQuestionPauseMs: Number(options.protectedQuestionPauseMs),
+          protectedQuestionKeepPauseMs: Number(options.protectedQuestionKeepPauseMs),
         },
       });
       await writeJson(outputPlanPath, result.editPlan);
       await writeJson(shortFormPacingPath(project), result.pacingPlan);
       console.log(`tightened ${result.pacingPlan.beforeDurationMs}ms -> ${result.pacingPlan.afterDurationMs}ms`);
       console.log(`removed ${result.pacingPlan.removedMs}ms across ${result.pacingPlan.cuts.length} cuts`);
+      console.log(`protected ${result.pacingPlan.protectedPauses.length} question-chain pauses`);
       console.log(`edit plan ${outputPlanPath}`);
       console.log(`pacing plan ${shortFormPacingPath(project)}`);
       for (const warning of result.pacingPlan.warnings) console.log(`warning: ${warning}`);
@@ -568,6 +575,10 @@ interface GradeCliOptions {
   radiusXPct: string;
   radiusYPct: string;
   featherPx: string;
+  shadowThreshold: string;
+  highlightThreshold: string;
+  shadowFeatherPx: string;
+  finalBlurPx: string;
   brightness: string;
   contrast: string;
   gamma: string;
@@ -582,6 +593,10 @@ function gradeOptionsFromCli(options: GradeCliOptions): Partial<SubjectMaskGrade
     radiusXPct: Number(options.radiusXPct),
     radiusYPct: Number(options.radiusYPct),
     featherPx: Number(options.featherPx),
+    shadowThreshold: Number(options.shadowThreshold),
+    highlightThreshold: Number(options.highlightThreshold),
+    shadowFeatherPx: Number(options.shadowFeatherPx),
+    finalBlurPx: Number(options.finalBlurPx),
     brightness: Number(options.brightness),
     contrast: Number(options.contrast),
     gamma: Number(options.gamma),
@@ -597,6 +612,10 @@ function addGradeOptions(command: Command): Command {
     .option("--radius-x-pct <n>", "Subject mask horizontal radius as a 0-1 percentage", String(DEFAULT_SUBJECT_MASK_GRADE_OPTIONS.radiusXPct))
     .option("--radius-y-pct <n>", "Subject mask vertical radius as a 0-1 percentage", String(DEFAULT_SUBJECT_MASK_GRADE_OPTIONS.radiusYPct))
     .option("--feather-px <px>", "Subject mask feather radius in pixels", String(DEFAULT_SUBJECT_MASK_GRADE_OPTIONS.featherPx))
+    .option("--shadow-threshold <n>", "Luma value at or below which the grade mask is fully active", String(DEFAULT_SUBJECT_MASK_GRADE_OPTIONS.shadowThreshold))
+    .option("--highlight-threshold <n>", "Luma value at or above which the grade mask is inactive", String(DEFAULT_SUBJECT_MASK_GRADE_OPTIONS.highlightThreshold))
+    .option("--shadow-feather-px <px>", "Blur radius for the luma shadow matte", String(DEFAULT_SUBJECT_MASK_GRADE_OPTIONS.shadowFeatherPx))
+    .option("--final-blur-px <px>", "Blur radius for the combined subject/shadow mask", String(DEFAULT_SUBJECT_MASK_GRADE_OPTIONS.finalBlurPx))
     .option("--brightness <n>", "FFmpeg eq brightness adjustment", String(DEFAULT_SUBJECT_MASK_GRADE_OPTIONS.brightness))
     .option("--contrast <n>", "FFmpeg eq contrast multiplier", String(DEFAULT_SUBJECT_MASK_GRADE_OPTIONS.contrast))
     .option("--gamma <n>", "FFmpeg eq gamma multiplier", String(DEFAULT_SUBJECT_MASK_GRADE_OPTIONS.gamma))

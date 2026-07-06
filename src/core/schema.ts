@@ -150,6 +150,7 @@ export type EditPlan = z.infer<typeof EditPlanSchema>;
 
 export const ShortFormPacingCutSchema = z.object({
   id: z.string(),
+  classification: z.enum(["dead-air", "semantic-beat", "microcut", "protected-question-chain"]).default("dead-air"),
   sourceSegmentId: z.string(),
   sourceStartMs: MsSchema,
   sourceEndMs: MsSchema,
@@ -161,6 +162,19 @@ export const ShortFormPacingCutSchema = z.object({
 });
 
 export type ShortFormPacingCut = z.infer<typeof ShortFormPacingCutSchema>;
+
+export const ShortFormPacingProtectedPauseSchema = z.object({
+  id: z.string(),
+  sourceSegmentId: z.string(),
+  sourceStartMs: MsSchema,
+  sourceEndMs: MsSchema,
+  durationMs: MsSchema,
+  reason: z.string(),
+  precedingWord: z.string().nullable(),
+  followingWord: z.string().nullable(),
+});
+
+export type ShortFormPacingProtectedPause = z.infer<typeof ShortFormPacingProtectedPauseSchema>;
 
 export const ShortFormPacingPlanSchema = z.object({
   version: z.literal(CUTROOM_VERSION),
@@ -177,8 +191,11 @@ export const ShortFormPacingPlanSchema = z.object({
     tailOutMs: MsSchema,
     minCutMs: MsSchema,
     minSegmentMs: MsSchema,
+    protectedQuestionPauseMs: MsSchema,
+    protectedQuestionKeepPauseMs: MsSchema,
   }),
   cuts: z.array(ShortFormPacingCutSchema),
+  protectedPauses: z.array(ShortFormPacingProtectedPauseSchema).default([]),
   warnings: z.array(z.string()).default([]),
 });
 
@@ -197,6 +214,10 @@ export const ColorGradePlanSchema = z.object({
     radiusXPct: z.number().positive(),
     radiusYPct: z.number().positive(),
     featherPx: z.number().nonnegative(),
+    shadowThreshold: z.number().min(0).max(255),
+    highlightThreshold: z.number().min(0).max(255),
+    shadowFeatherPx: z.number().nonnegative(),
+    finalBlurPx: z.number().nonnegative(),
   }),
   grade: z.object({
     brightness: z.number(),

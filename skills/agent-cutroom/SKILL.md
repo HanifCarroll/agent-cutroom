@@ -109,7 +109,7 @@ cutroom shortform-pacing "$PROJECT"
 cutroom render "$PROJECT"
 ```
 
-Inspect `plans/short-form-pacing.json` and `edit-plan.json` before trusting the render. If no selected edit plan exists yet, run `plan` before `shortform-pacing`. Finish this step when `renders/rough-cut.mp4` exists and the rendered cut matches the recorded observations.
+Inspect `plans/short-form-pacing.json` and `edit-plan.json` before trusting the render. The pacing plan should show applied cuts and any protected rhetorical pauses. If no selected edit plan exists yet, run `plan` before `shortform-pacing`. Finish this step when `renders/rough-cut.mp4` exists and the rendered cut matches the recorded observations.
 
 8. Grade, caption, verify, package, and export as needed.
 
@@ -122,7 +122,7 @@ cutroom social-package "$PROJECT" --platform instagram
 cutroom export-otio "$PROJECT"
 ```
 
-Run `grade-preview` when the subject is too dark. Inspect the preview frames under `review/color-grade/`, then adjust mask or grade options before `grade-apply` when needed.
+Run `grade-preview` when the subject is too dark. Inspect the preview frames under `review/color-grade/`, then adjust subject-region or shadow/highlight threshold options before `grade-apply` when needed. The grade mask should not create a visible wall spotlight.
 
 Use `caption` only when real word timings exist. It writes `plans/caption-plan.json`, `captions/captions.ass`, and, by default, `renders/captioned.mp4`.
 

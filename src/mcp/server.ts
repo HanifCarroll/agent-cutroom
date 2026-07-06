@@ -301,7 +301,7 @@ server.registerTool(
   {
     title: "Apply Short-Form Pacing",
     description:
-      "Use `shortform_pacing` after content_package or plan to tighten edit-plan.json by cutting transcript-word pauses while preserving small breath gaps.",
+      "Use `shortform_pacing` after content_package or plan to tighten edit-plan.json by cutting meaningful dead-air pauses while preserving small breath gaps and rhetorical question-chain pauses.",
     inputSchema: {
       project: ProjectArg,
       sourcePlan: z.string().default("edit-plan.json"),
@@ -310,16 +310,30 @@ server.registerTool(
       keepPauseMs: z.number().int().nonnegative().optional(),
       leadInMs: z.number().int().nonnegative().optional(),
       tailOutMs: z.number().int().nonnegative().optional(),
+      protectedQuestionPauseMs: z.number().int().nonnegative().optional(),
+      protectedQuestionKeepPauseMs: z.number().int().nonnegative().optional(),
     },
     outputSchema: { status: z.string(), text: z.string(), resources: z.array(z.object({ uri: z.string(), name: z.string() })) },
     annotations: { readOnlyHint: false, openWorldHint: false },
   },
-  async ({ project, sourcePlan, outPlan, minPauseMs, keepPauseMs, leadInMs, tailOutMs }) => {
+  async ({
+    project,
+    sourcePlan,
+    outPlan,
+    minPauseMs,
+    keepPauseMs,
+    leadInMs,
+    tailOutMs,
+    protectedQuestionPauseMs,
+    protectedQuestionKeepPauseMs,
+  }) => {
     const args = ["shortform-pacing", project, "--source-plan", sourcePlan, "--out-plan", outPlan];
     if (minPauseMs !== undefined) args.push("--min-pause-ms", String(minPauseMs));
     if (keepPauseMs !== undefined) args.push("--keep-pause-ms", String(keepPauseMs));
     if (leadInMs !== undefined) args.push("--lead-in-ms", String(leadInMs));
     if (tailOutMs !== undefined) args.push("--tail-out-ms", String(tailOutMs));
+    if (protectedQuestionPauseMs !== undefined) args.push("--protected-question-pause-ms", String(protectedQuestionPauseMs));
+    if (protectedQuestionKeepPauseMs !== undefined) args.push("--protected-question-keep-pause-ms", String(protectedQuestionKeepPauseMs));
     return toolResult(await callCli(args), [
       artifactLink(project, outPlan, "Short-form edit plan"),
       artifactLink(project, "plans/short-form-pacing.json", "Short-form pacing plan"),
@@ -332,7 +346,7 @@ server.registerTool(
   {
     title: "Preview Subject Mask Grade",
     description:
-      "Use `grade_preview` after rendering to write preview frames for a feathered subject-mask shadow lift.",
+      "Use `grade_preview` after rendering to write preview frames for a highlight-protected subject-mask shadow lift.",
     inputSchema: {
       project: ProjectArg,
       target: z.string().default("renders/rough-cut.mp4"),
@@ -343,6 +357,10 @@ server.registerTool(
       radiusXPct: z.number().positive().optional(),
       radiusYPct: z.number().positive().optional(),
       featherPx: z.number().nonnegative().optional(),
+      shadowThreshold: z.number().min(0).max(255).optional(),
+      highlightThreshold: z.number().min(0).max(255).optional(),
+      shadowFeatherPx: z.number().nonnegative().optional(),
+      finalBlurPx: z.number().nonnegative().optional(),
       brightness: z.number().optional(),
       contrast: z.number().positive().optional(),
       gamma: z.number().positive().optional(),
@@ -362,6 +380,10 @@ server.registerTool(
     radiusXPct,
     radiusYPct,
     featherPx,
+    shadowThreshold,
+    highlightThreshold,
+    shadowFeatherPx,
+    finalBlurPx,
     brightness,
     contrast,
     gamma,
@@ -375,6 +397,10 @@ server.registerTool(
     if (radiusXPct !== undefined) args.push("--radius-x-pct", String(radiusXPct));
     if (radiusYPct !== undefined) args.push("--radius-y-pct", String(radiusYPct));
     if (featherPx !== undefined) args.push("--feather-px", String(featherPx));
+    if (shadowThreshold !== undefined) args.push("--shadow-threshold", String(shadowThreshold));
+    if (highlightThreshold !== undefined) args.push("--highlight-threshold", String(highlightThreshold));
+    if (shadowFeatherPx !== undefined) args.push("--shadow-feather-px", String(shadowFeatherPx));
+    if (finalBlurPx !== undefined) args.push("--final-blur-px", String(finalBlurPx));
     if (brightness !== undefined) args.push("--brightness", String(brightness));
     if (contrast !== undefined) args.push("--contrast", String(contrast));
     if (gamma !== undefined) args.push("--gamma", String(gamma));
@@ -391,7 +417,7 @@ server.registerTool(
   {
     title: "Apply Subject Mask Grade",
     description:
-      "Use `grade_apply` after rendering to create a shadow-lifted render through a feathered subject mask.",
+      "Use `grade_apply` after rendering to create a shadow-lifted render through a subject mask combined with luma highlight protection.",
     inputSchema: {
       project: ProjectArg,
       target: z.string().default("renders/rough-cut.mp4"),
@@ -401,6 +427,10 @@ server.registerTool(
       radiusXPct: z.number().positive().optional(),
       radiusYPct: z.number().positive().optional(),
       featherPx: z.number().nonnegative().optional(),
+      shadowThreshold: z.number().min(0).max(255).optional(),
+      highlightThreshold: z.number().min(0).max(255).optional(),
+      shadowFeatherPx: z.number().nonnegative().optional(),
+      finalBlurPx: z.number().nonnegative().optional(),
       brightness: z.number().optional(),
       contrast: z.number().positive().optional(),
       gamma: z.number().positive().optional(),
@@ -419,6 +449,10 @@ server.registerTool(
     radiusXPct,
     radiusYPct,
     featherPx,
+    shadowThreshold,
+    highlightThreshold,
+    shadowFeatherPx,
+    finalBlurPx,
     brightness,
     contrast,
     gamma,
@@ -431,6 +465,10 @@ server.registerTool(
     if (radiusXPct !== undefined) args.push("--radius-x-pct", String(radiusXPct));
     if (radiusYPct !== undefined) args.push("--radius-y-pct", String(radiusYPct));
     if (featherPx !== undefined) args.push("--feather-px", String(featherPx));
+    if (shadowThreshold !== undefined) args.push("--shadow-threshold", String(shadowThreshold));
+    if (highlightThreshold !== undefined) args.push("--highlight-threshold", String(highlightThreshold));
+    if (shadowFeatherPx !== undefined) args.push("--shadow-feather-px", String(shadowFeatherPx));
+    if (finalBlurPx !== undefined) args.push("--final-blur-px", String(finalBlurPx));
     if (brightness !== undefined) args.push("--brightness", String(brightness));
     if (contrast !== undefined) args.push("--contrast", String(contrast));
     if (gamma !== undefined) args.push("--gamma", String(gamma));

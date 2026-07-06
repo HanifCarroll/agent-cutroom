@@ -16,6 +16,10 @@ export interface SubjectMaskGradeOptions {
   radiusXPct: number;
   radiusYPct: number;
   featherPx: number;
+  shadowThreshold: number;
+  highlightThreshold: number;
+  shadowFeatherPx: number;
+  finalBlurPx: number;
   brightness: number;
   contrast: number;
   gamma: number;
@@ -28,12 +32,16 @@ export const DEFAULT_SUBJECT_MASK_GRADE_OPTIONS: SubjectMaskGradeOptions = {
   centerYPct: 0.39,
   radiusXPct: 0.324,
   radiusYPct: 0.365,
-  featherPx: 90,
-  brightness: 0.055,
-  contrast: 1.03,
-  gamma: 1.5,
-  gammaWeight: 0.8,
-  saturation: 1.06,
+  featherPx: 120,
+  shadowThreshold: 95,
+  highlightThreshold: 185,
+  shadowFeatherPx: 24,
+  finalBlurPx: 8,
+  brightness: 0.035,
+  contrast: 1.02,
+  gamma: 1.35,
+  gammaWeight: 0.76,
+  saturation: 1.04,
 };
 
 interface BuildFilterOptions {
@@ -69,6 +77,10 @@ function normalizeOptions(options: Partial<SubjectMaskGradeOptions> | undefined)
     radiusXPct: Math.max(0.01, merged.radiusXPct),
     radiusYPct: Math.max(0.01, merged.radiusYPct),
     featherPx: Math.max(0, Math.round(merged.featherPx)),
+    shadowThreshold: Math.min(254, Math.max(0, Math.round(merged.shadowThreshold))),
+    highlightThreshold: Math.min(255, Math.max(1, Math.round(merged.highlightThreshold))),
+    shadowFeatherPx: Math.max(0, Math.round(merged.shadowFeatherPx)),
+    finalBlurPx: Math.max(0, Math.round(merged.finalBlurPx)),
     brightness: merged.brightness,
     contrast: Math.max(0.01, merged.contrast),
     gamma: Math.max(0.01, merged.gamma),
@@ -100,6 +112,12 @@ export function buildSubjectMaskFilter({ media, options }: BuildFilterOptions): 
   const centerY = Math.round(height * normalizedOptions.centerYPct);
   const radiusX = Math.max(1, Math.round(width * normalizedOptions.radiusXPct));
   const radiusY = Math.max(1, Math.round(height * normalizedOptions.radiusYPct));
+  const shadowThreshold = Math.min(
+    normalizedOptions.shadowThreshold,
+    normalizedOptions.highlightThreshold - 1,
+  );
+  const highlightThreshold = Math.max(normalizedOptions.highlightThreshold, shadowThreshold + 1);
+  const shadowRange = Math.max(1, highlightThreshold - shadowThreshold);
   const grade = [
     `brightness=${filterNumber(normalizedOptions.brightness)}`,
     `contrast=${filterNumber(normalizedOptions.contrast)}`,
@@ -108,10 +126,13 @@ export function buildSubjectMaskFilter({ media, options }: BuildFilterOptions): 
     `saturation=${filterNumber(normalizedOptions.saturation)}`,
   ].join(":");
   const maskExpression = `if(lte(pow((X-${centerX})/${radiusX},2)+pow((Y-${centerY})/${radiusY},2),1),255,0)`;
+  const shadowExpression = `if(lte(lum(X,Y),${shadowThreshold}),255,if(gte(lum(X,Y),${highlightThreshold}),0,(${highlightThreshold}-lum(X,Y))*255/${shadowRange}))`;
   const filterGraph = [
-    "[0:v]format=yuv444p,split=2[base][grade]",
+    "[0:v]format=yuv444p,split=3[base][grade][shadowSrc]",
     `[grade]eq=${grade}[lit]`,
-    `color=c=black:s=${width}x${height}:r=${filterNumber(fps)}:d=${filterNumber(durationSeconds)},format=gray,geq=lum='${maskExpression}',gblur=sigma=${normalizedOptions.featherPx}[mask]`,
+    `color=c=black:s=${width}x${height}:r=${filterNumber(fps)}:d=${filterNumber(durationSeconds)},format=gray,geq=lum='${maskExpression}',gblur=sigma=${normalizedOptions.featherPx}[ellipseMask]`,
+    `[shadowSrc]format=gray,geq=lum='${shadowExpression}',gblur=sigma=${normalizedOptions.shadowFeatherPx}[shadowMask]`,
+    `[ellipseMask][shadowMask]blend=all_mode=multiply,gblur=sigma=${normalizedOptions.finalBlurPx}[mask]`,
     "[base][lit][mask]maskedmerge[outv]",
   ].join(";");
   return { filterGraph, normalizedOptions };
@@ -143,6 +164,10 @@ function colorGradePlan({
       radiusXPct: options.radiusXPct,
       radiusYPct: options.radiusYPct,
       featherPx: options.featherPx,
+      shadowThreshold: options.shadowThreshold,
+      highlightThreshold: options.highlightThreshold,
+      shadowFeatherPx: options.shadowFeatherPx,
+      finalBlurPx: options.finalBlurPx,
     },
     grade: {
       brightness: options.brightness,

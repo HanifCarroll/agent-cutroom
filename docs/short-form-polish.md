@@ -13,32 +13,35 @@ agent-cutroom verify "$PROJECT" --target renders/captioned.mp4
 
 ## Short-Form Pacing
 
-`shortform-pacing` rewrites an edit plan using real transcript word timings. It cuts long word-boundary pauses, preserves a small breath around each jump cut, and records the exact removed ranges.
+`shortform-pacing` rewrites an edit plan using real transcript word timings. It cuts meaningful dead-air pauses, preserves a small breath around each jump cut, and records the exact removed ranges. It also protects short rhetorical question-chain pauses, such as `Who is this for? What does it do?`, because those pauses are part of the delivery.
 
 Default behavior:
 
 - reads `edit-plan.json`
 - writes the tightened edit plan back to `edit-plan.json`
 - writes `plans/short-form-pacing.json`
-- cuts pauses at or above `350ms`
+- cuts pauses at or above `500ms`
+- skips cuts that would remove less than `350ms`
 - preserves `160ms` of total pause around each cut
+- preserves question-chain pauses up to `700ms`
 - trims non-speech padding at the beginning and end of each segment
 
 Useful options:
 
 ```sh
 agent-cutroom shortform-pacing "$PROJECT" \
-  --min-pause-ms 300 \
-  --keep-pause-ms 120 \
+  --min-pause-ms 500 \
+  --keep-pause-ms 160 \
+  --protected-question-pause-ms 700 \
   --source-plan edit-plan.json \
   --out-plan edit-plan.json
 ```
 
-If transcript word timings are missing, the command leaves the plan unchanged and writes a warning. It does not invent word timings from plain text.
+If transcript word timings are missing, the command leaves the plan unchanged and writes a warning. It does not invent word timings from plain text. `plans/short-form-pacing.json` includes both applied `cuts[]` and preserved `protectedPauses[]`.
 
-## Subject-Mask Shadow Lift
+## Highlight-Protected Subject Shadow Lift
 
-`grade-preview` and `grade-apply` use FFmpeg to apply a soft elliptical mask over the speaker area. The filter grades a brighter copy of the video, then merges that copy back only through the mask.
+`grade-preview` and `grade-apply` use FFmpeg to apply a subject-region mask combined with a luma shadow mask. The filter grades a brighter copy of the video, then merges that copy back only where both masks are active. Bright wall pixels are protected, which avoids the visible spotlight problem from a plain oval mask.
 
 Default behavior:
 
@@ -46,24 +49,25 @@ Default behavior:
 - preview frames: `review/color-grade/`
 - applied output: `renders/graded.mp4`
 - plan artifact: `plans/color-grade.json`
-- mask: centered subject ellipse, feathered by `70px`
-- grade: small brightness lift, contrast, gamma/shadow lift, and saturation
+- subject mask: centered subject ellipse, feathered by `120px`
+- shadow mask: full strength at luma `95` and below, inactive at luma `185` and above
+- grade: conservative brightness lift, contrast, gamma/shadow lift, and saturation
 
 Useful options:
 
 ```sh
 agent-cutroom grade-preview "$PROJECT" \
   --target renders/rough-cut.mp4 \
-  --center-y-pct 0.40 \
-  --radius-y-pct 0.36 \
-  --gamma 1.22
+  --shadow-threshold 90 \
+  --highlight-threshold 175 \
+  --gamma 1.35
 
 agent-cutroom grade-apply "$PROJECT" \
   --target renders/rough-cut.mp4 \
   --out renders/graded.mp4 \
-  --center-y-pct 0.40 \
-  --radius-y-pct 0.36 \
-  --gamma 1.22
+  --shadow-threshold 90 \
+  --highlight-threshold 175 \
+  --gamma 1.35
 ```
 
-The mask is deterministic. The agent should inspect preview frames and tune the mask numbers when the subject is not centered.
+The mask is deterministic. The agent should inspect preview frames and tune the subject-region and luma thresholds when the subject is not centered or the wall starts to lift.

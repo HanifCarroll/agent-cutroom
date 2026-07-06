@@ -6,6 +6,7 @@ import {
   type EditSegment,
   type ShortFormPacingCut,
   type ShortFormPacingPlan,
+  type ShortFormPacingProtectedPause,
   type Timeline,
   type TranscriptWord,
 } from "./schema.js";
@@ -17,15 +18,19 @@ export interface ShortFormPacingOptions {
   tailOutMs: number;
   minCutMs: number;
   minSegmentMs: number;
+  protectedQuestionPauseMs: number;
+  protectedQuestionKeepPauseMs: number;
 }
 
 export const DEFAULT_SHORT_FORM_PACING_OPTIONS: ShortFormPacingOptions = {
-  minPauseMs: 350,
+  minPauseMs: 500,
   keepPauseMs: 160,
   leadInMs: 120,
   tailOutMs: 220,
-  minCutMs: 120,
+  minCutMs: 350,
   minSegmentMs: 80,
+  protectedQuestionPauseMs: 700,
+  protectedQuestionKeepPauseMs: 360,
 };
 
 export interface CreateShortFormPacingOptions {
@@ -50,6 +55,8 @@ function normalizeOptions(options: Partial<ShortFormPacingOptions> | undefined):
     tailOutMs: Math.max(0, Math.round(merged.tailOutMs)),
     minCutMs: Math.max(0, Math.round(merged.minCutMs)),
     minSegmentMs: Math.max(1, Math.round(merged.minSegmentMs)),
+    protectedQuestionPauseMs: Math.max(0, Math.round(merged.protectedQuestionPauseMs)),
+    protectedQuestionKeepPauseMs: Math.max(0, Math.round(merged.protectedQuestionKeepPauseMs)),
   };
 }
 
@@ -105,11 +112,57 @@ function addCut(cuts: ShortFormPacingCut[], cut: Omit<ShortFormPacingCut, "id">)
   });
 }
 
+function addProtectedPause(
+  protectedPauses: ShortFormPacingProtectedPause[],
+  pause: Omit<ShortFormPacingProtectedPause, "id">,
+): void {
+  if (pause.sourceEndMs <= pause.sourceStartMs) return;
+  protectedPauses.push({
+    id: `protected-pause-${String(protectedPauses.length + 1).padStart(4, "0")}`,
+    ...pause,
+  });
+}
+
+const QUESTION_OPENERS = new Set(["who", "what", "why", "how", "where", "when", "which"]);
+const QUESTION_CONNECTORS = new Set(["and", "or"]);
+
+function normalizedWord(word: TranscriptWord): string {
+  return word.text.toLowerCase().replace(/^[^a-z0-9]+|[^a-z0-9]+$/g, "");
+}
+
+function isQuestionOpener(word: TranscriptWord | undefined): boolean {
+  return Boolean(word && QUESTION_OPENERS.has(normalizedWord(word)));
+}
+
+function endsQuestion(word: TranscriptWord | undefined): boolean {
+  return Boolean(word && /\?\s*$/.test(word.text));
+}
+
+function isQuestionConnector(word: TranscriptWord | undefined): boolean {
+  return Boolean(word && QUESTION_CONNECTORS.has(normalizedWord(word)));
+}
+
+function isProtectedQuestionGap({
+  previous,
+  next,
+  following,
+}: {
+  previous: TranscriptWord;
+  next: TranscriptWord;
+  following?: TranscriptWord;
+}): boolean {
+  if (isQuestionOpener(next)) return true;
+  if (endsQuestion(previous)) return true;
+  if (isQuestionConnector(next) && isQuestionOpener(following)) return true;
+  return false;
+}
+
 export function createShortFormPacing(options: CreateShortFormPacingOptions): ShortFormPacingResult {
   const settings = normalizeOptions(options.options);
   const words = wordsFromTimeline(options.timeline);
   const warnings: string[] = [];
   const cuts: ShortFormPacingCut[] = [];
+  const protectedPauses: ShortFormPacingProtectedPause[] = [];
   const segments: EditSegment[] = [];
   let segmentIndex = 1;
 
@@ -144,6 +197,7 @@ export function createShortFormPacing(options: CreateShortFormPacingOptions): Sh
         sourceEndMs: clipStartMs,
         removedMs: clipStartMs - segment.sourceStartMs,
         keptPauseMs: Math.min(settings.leadInMs, clipStartMs - segment.sourceStartMs),
+        classification: "dead-air",
         reason: "trimmed leading non-speech padding",
         precedingWord: null,
         followingWord: firstWord.text,
@@ -153,13 +207,31 @@ export function createShortFormPacing(options: CreateShortFormPacingOptions): Sh
     for (let index = 1; index < segmentWords.length; index += 1) {
       const previous = segmentWords[index - 1]!;
       const next = segmentWords[index]!;
+      const following = segmentWords[index + 1];
       const gapStartMs = Math.max(previous.endMs, clipStartMs);
       const gapEndMs = Math.min(next.startMs, clipEndMs);
       const gapMs = gapEndMs - gapStartMs;
       if (gapMs < settings.minPauseMs) continue;
 
-      const keepBeforeMs = Math.floor(settings.keepPauseMs / 2);
-      const keepAfterMs = settings.keepPauseMs - keepBeforeMs;
+      const protectedQuestionGap = isProtectedQuestionGap({ previous, next, following });
+      if (protectedQuestionGap && gapMs <= settings.protectedQuestionPauseMs) {
+        addProtectedPause(protectedPauses, {
+          sourceSegmentId: segment.id,
+          sourceStartMs: gapStartMs,
+          sourceEndMs: gapEndMs,
+          durationMs: gapMs,
+          reason: "preserved rhetorical question-chain pause",
+          precedingWord: previous.text,
+          followingWord: next.text,
+        });
+        continue;
+      }
+
+      const keepPauseMs = protectedQuestionGap
+        ? Math.max(settings.keepPauseMs, settings.protectedQuestionKeepPauseMs)
+        : settings.keepPauseMs;
+      const keepBeforeMs = Math.floor(keepPauseMs / 2);
+      const keepAfterMs = keepPauseMs - keepBeforeMs;
       const cutStartMs = Math.min(gapEndMs, gapStartMs + keepBeforeMs);
       const cutEndMs = Math.max(cutStartMs, gapEndMs - keepAfterMs);
       const removedMs = cutEndMs - cutStartMs;
@@ -180,7 +252,10 @@ export function createShortFormPacing(options: CreateShortFormPacingOptions): Sh
         sourceEndMs: cutEndMs,
         removedMs,
         keptPauseMs: gapMs - removedMs,
-        reason: "tightened transcript-word pause",
+        classification: protectedQuestionGap ? "semantic-beat" : "dead-air",
+        reason: protectedQuestionGap
+          ? "tightened long rhetorical question-chain pause"
+          : "tightened transcript-word pause",
         precedingWord: previous.text,
         followingWord: next.text,
       });
@@ -204,6 +279,7 @@ export function createShortFormPacing(options: CreateShortFormPacingOptions): Sh
         sourceEndMs: segment.sourceEndMs,
         removedMs: segment.sourceEndMs - clipEndMs,
         keptPauseMs: Math.min(settings.tailOutMs, segment.sourceEndMs - clipEndMs),
+        classification: "dead-air",
         reason: "trimmed trailing non-speech padding",
         precedingWord: lastWord.text,
         followingWord: null,
@@ -233,6 +309,7 @@ export function createShortFormPacing(options: CreateShortFormPacingOptions): Sh
     removedMs: Math.max(0, beforeDurationMs - afterDurationMs),
     options: settings,
     cuts,
+    protectedPauses,
     warnings,
   });
 

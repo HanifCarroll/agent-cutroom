@@ -96,7 +96,7 @@ bun dist/cli/index.js shortform-pacing ./my-cut
 bun dist/cli/index.js render ./my-cut
 ```
 
-Preview and apply a subject-mask shadow lift when the speaker is underexposed:
+Preview and apply a highlight-protected subject shadow lift when the speaker is underexposed:
 
 ```sh
 bun dist/cli/index.js grade-preview ./my-cut --target renders/rough-cut.mp4
@@ -235,7 +235,7 @@ The built-in `talking-head-story` recipe owns deterministic candidate generation
 
 ## Short-Form Polish
 
-`agent-cutroom shortform-pacing` tightens the selected edit plan using transcript word timings, writing `plans/short-form-pacing.json` and updating `edit-plan.json` by default. `agent-cutroom grade-preview` and `agent-cutroom grade-apply` use a feathered FFmpeg subject mask to lift shadows on the speaker without globally blowing out the frame. See [docs/short-form-polish.md](docs/short-form-polish.md).
+`agent-cutroom shortform-pacing` tightens the selected edit plan using transcript word timings, writing `plans/short-form-pacing.json` and updating `edit-plan.json` by default. It preserves short rhetorical question-chain pauses and skips cuts too small to justify a jump. `agent-cutroom grade-preview` and `agent-cutroom grade-apply` use a feathered FFmpeg subject mask plus a luma shadow mask to lift the speaker while protecting bright wall pixels. See [docs/short-form-polish.md](docs/short-form-polish.md).
 
 ## MCP Server
 
