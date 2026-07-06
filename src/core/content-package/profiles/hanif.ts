@@ -242,6 +242,18 @@ export const HANIF_CONTENT_PROFILE: ContentProfile = ContentProfileSchema.parse(
   ],
   titleRules: [
     {
+      allPhrases: ["you need people", "feedback", "improve it"],
+      title: "You Need People To Try It",
+    },
+    {
+      allPhrases: ["advancing on consulting", "technical consultant", "icp"],
+      title: "Narrowing The Consulting ICP",
+    },
+    {
+      allPhrases: ["paralysis by decision paralysis"],
+      title: "No More Decision Paralysis",
+    },
+    {
       allPhrases: ["actually do things", "never published"],
       title: "Actually Do Things And Publish The Work",
     },

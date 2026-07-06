@@ -108,6 +108,35 @@ function titleCase(raw: string): string {
     .join(" ");
 }
 
+function hasRepeatedEarlyPhrase(text: string): boolean {
+  const words = text
+    .toLowerCase()
+    .replace(/[^\w'\s-]/g, " ")
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 12);
+  for (let size = 2; size <= 3; size += 1) {
+    const seen = new Set<string>();
+    for (let index = 0; index <= words.length - size; index += 1) {
+      const phrase = words.slice(index, index + size).join(" ");
+      if (seen.has(phrase)) return true;
+      seen.add(phrase);
+    }
+  }
+  return false;
+}
+
+function weakTitleSource(text: string): boolean {
+  const lower = text.toLowerCase().trim();
+  return (
+    hasRepeatedEarlyPhrase(text) ||
+    /^(it'?s|it is) hard to put into words\b/.test(lower) ||
+    /^and another thing\b/.test(lower) ||
+    /^people to\b/.test(lower) ||
+    /^so i'?m advancing\b/.test(lower)
+  );
+}
+
 function bestTheme(text: string, profile: ContentProfile): ThemeScore {
   const lower = text.toLowerCase();
   const ranked = profile.themes
@@ -197,14 +226,15 @@ function suggestedArtifacts(text: string, score: number, themeId: string, profil
   return [...artifacts];
 }
 
-function candidateTitle(theme: ContentProfile["themes"][number], text: string, profile: ContentProfile): string {
+function candidateTitle(theme: ContentProfile["themes"][number], text: string, point: string, profile: ContentProfile): string {
   const lower = text.toLowerCase();
   const rule = profile.titleRules.find((item) =>
     item.allPhrases.every((phrase) => includesPhrase(lower, phrase)),
   );
   if (rule) return rule.title;
   const hook = firstUsefulSentence(text);
-  if (hook) return titleCase(hook);
+  const source = [point, hook].find((item) => item && !weakTitleSource(item)) ?? hook;
+  if (source) return titleCase(source);
   return theme.label;
 }
 
@@ -429,7 +459,7 @@ function buildCandidate({
   const candidate = {
     id: storyCandidateId(startMs, endMs),
     rank: 1,
-    title: candidateTitle(scored.theme, text, profile),
+    title: candidateTitle(scored.theme, text, point, profile),
     theme: scored.theme.id,
     themeLabel: scored.theme.label,
     audience: scored.theme.audience,

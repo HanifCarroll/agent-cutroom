@@ -260,6 +260,46 @@ describe("content package", () => {
     expect(result.editPlan?.segments[0]?.evidence).toContain('trimmed personal-process tail before "so i got"');
   });
 
+  it("uses profile title rules instead of repeated or vague hook fragments", () => {
+    const timeline: Timeline = {
+      ...contentPackageTimeline,
+      media: { ...contentPackageTimeline.media!, durationMs: 90_000 },
+      transcriptSegments: [
+        {
+          id: "seg-people",
+          startMs: 0,
+          endMs: 42_000,
+          text: "You need people, if nothing else, you need people to try it so that you can get feedback and improve it. Sharing the work gives you useful signal from the world.",
+          words: [{ id: "people-1", startMs: 0, endMs: 300, text: "You", probability: 0.99 }],
+        },
+        {
+          id: "seg-consulting",
+          startMs: 42_000,
+          endMs: 84_000,
+          text: "It's hard to put into words, like I said. So I'm advancing on consulting as a technical consultant. I got specific on the ICP around operations, workflow automation, and custom software for paid media agencies.",
+          words: [{ id: "consulting-1", startMs: 42_000, endMs: 42_300, text: "It's", probability: 0.99 }],
+        },
+      ],
+    };
+
+    const result = buildContentPackage({
+      timeline,
+      sourcePath: "source/source.mov",
+      title: "Title Quality Test",
+      recipe: TALKING_HEAD_STORY_RECIPE,
+      profile: HANIF_CONTENT_PROFILE,
+      targetDurationMs: 42_000,
+      minDurationMs: 30_000,
+      maxDurationMs: 50_000,
+      maxCandidates: 4,
+    });
+
+    expect(result.storyCandidates.candidates.map((candidate) => candidate.title)).toContain("You Need People To Try It");
+    expect(result.storyCandidates.candidates.map((candidate) => candidate.title)).toContain("Narrowing The Consulting ICP");
+    expect(result.storyCandidates.candidates.map((candidate) => candidate.title)).not.toContain("You Need People If Nothing Else You Need");
+    expect(result.storyCandidates.candidates.map((candidate) => candidate.title)).not.toContain("Its Hard to Put Into Words Like I");
+  });
+
   it("fails loudly when a forced selection is missing", () => {
     expect(() =>
       buildContentPackage({
