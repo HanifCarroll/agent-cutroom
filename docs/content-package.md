@@ -16,12 +16,6 @@ agent-cutroom content-package "$PROJECT" \
 
 The recipe owns the deterministic algorithm and output contract. The profile owns the themes, audience, transcript corrections, scoring defaults, and post-copy templates. The built-in `hanif` profile is tuned for Hanif's talking-head videos, but the command can also load a JSON content profile path.
 
-`agent-cutroom hanif-content-package` remains as a deprecated compatibility alias for:
-
-```sh
-agent-cutroom content-package <project> --recipe talking-head-story --profile hanif
-```
-
 ## Outputs
 
 The command writes stable project artifacts:
@@ -31,7 +25,7 @@ The command writes stable project artifacts:
 - `analysis/story-selection.md`
 - `edit-plan.json`
 
-`analysis/story-candidates.json` includes recipe/profile metadata, source metadata, the selected candidate id, stable source-range candidate ids, rank aliases such as `story-001`, source timestamps, transcript excerpts, evidence IDs, warnings, and profile-generated post-copy scaffolds.
+`analysis/story-candidates.json` includes recipe/profile metadata, source metadata, the selected candidate id, stable source-range candidate ids, source timestamps, transcript excerpts, evidence IDs, warnings, and profile-generated post-copy scaffolds.
 
 ## Built-In Hanif Profile
 

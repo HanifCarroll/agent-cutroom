@@ -85,7 +85,7 @@ bun dist/cli/index.js content-package ./my-cut \
   --target-seconds 75
 ```
 
-This writes `review/content-inventory.md`, `analysis/story-candidates.json`, `analysis/story-selection.md`, and a selected `edit-plan.json`. The recipe is generic; the `hanif` profile contains the current themes, transcript cleanup, scoring defaults, and post-copy scaffolds for Hanif's videos. Existing scripts can still call `hanif-content-package`, which is kept as a deprecated alias for the same recipe/profile pair.
+This writes `review/content-inventory.md`, `analysis/story-candidates.json`, `analysis/story-selection.md`, and a selected `edit-plan.json`. The recipe is generic; the `hanif` profile contains the current themes, transcript cleanup, scoring defaults, and post-copy scaffolds for Hanif's videos.
 
 Create and render a rough cut:
 

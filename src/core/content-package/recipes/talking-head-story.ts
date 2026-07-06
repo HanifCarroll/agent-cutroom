@@ -327,7 +327,6 @@ function buildCandidate({
   const candidate = {
     id: storyCandidateId(startMs, endMs),
     rank: 1,
-    legacyRankId: "story-001",
     title: candidateTitle(scored.theme, text, profile),
     theme: scored.theme.id,
     themeLabel: scored.theme.label,
@@ -376,7 +375,6 @@ function rankedCandidate(candidate: StoryCandidate, index: number): StoryCandida
   return StoryCandidateSchema.parse({
     ...candidate,
     rank: index + 1,
-    legacyRankId: `story-${String(index + 1).padStart(3, "0")}`,
   });
 }
 
@@ -429,9 +427,7 @@ function generateCandidates(options: ResolvedContentPackageOptions): StoryCandid
 
 function selectedCandidate(candidates: StoryCandidate[], selectedId?: string | null): StoryCandidate | null {
   if (selectedId) {
-    const selected = candidates.find(
-      (candidate) => candidate.id === selectedId || candidate.legacyRankId === selectedId,
-    );
+    const selected = candidates.find((candidate) => candidate.id === selectedId);
     if (!selected) throw new Error(`Unknown story candidate id: ${selectedId}`);
     return selected;
   }
@@ -508,7 +504,6 @@ function renderInventory(options: ResolvedContentPackageOptions, storyCandidates
       "## Selected Story",
       "",
       `- Candidate: ${selected.id}`,
-      `- Rank alias: ${selected.legacyRankId}`,
       `- Title: ${selected.title}`,
       `- Time: ${selected.timestamp}`,
       `- Score: ${selected.score}`,
@@ -579,7 +574,7 @@ function renderSelection(candidate: StoryCandidate | null, editPlan: EditPlan | 
     "## Selected Candidate",
     "",
     `- ID: ${candidate.id}`,
-    `- Rank alias: ${candidate.legacyRankId}`,
+    `- Rank: ${candidate.rank}`,
     `- Title: ${candidate.title}`,
     `- Time: ${candidate.timestamp}`,
     `- Duration: ${formatTimestamp(candidate.durationMs)}`,

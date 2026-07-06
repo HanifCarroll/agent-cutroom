@@ -106,7 +106,6 @@ describe("content package", () => {
     expect(result.selectedCandidate?.suggestedArtifacts).toContain("clip");
     expect(result.selectedCandidate?.theme).toBe("public-building-proof");
     expect(result.selectedCandidate?.id).toBe("story-000000000-000055000");
-    expect(result.selectedCandidate?.legacyRankId).toBe("story-001");
     expect(result.editPlan?.segments).toHaveLength(1);
     expect(result.editPlan?.segments[0]?.sourceStartMs).toBe(0);
     expect(result.editPlan?.segments[0]?.sourceEndMs).toBe(56_200);

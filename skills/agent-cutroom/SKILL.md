@@ -92,7 +92,7 @@ cutroom content-package "$PROJECT" \
 
 Use the `hanif` profile for Hanif's tripod videos, walk-style videos, raw thinking recordings, consulting/content/software videos, and videos meant to become writing, clips, vault notes, or tasks. The command writes `review/content-inventory.md`, `analysis/story-candidates.json`, `analysis/story-selection.md`, and `edit-plan.json`.
 
-Inspect the inventory and selection before rendering. Use `hanif-content-package` only as a compatibility alias for old runs.
+Inspect the inventory and selection before rendering.
 
 6. Find candidate moments.
 

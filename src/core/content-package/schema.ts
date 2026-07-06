@@ -96,7 +96,6 @@ export type StoryCandidateSource = z.infer<typeof StoryCandidateSourceSchema>;
 export const StoryCandidateSchema = z.object({
   id: z.string(),
   rank: z.number().int().positive(),
-  legacyRankId: z.string(),
   title: z.string(),
   theme: z.string(),
   themeLabel: z.string(),

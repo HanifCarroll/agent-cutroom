@@ -66,7 +66,7 @@ project/
 - `review/review-pack.md`: agent-facing Markdown review surface with transcript windows and frame references.
 - `analysis/highlight-candidates.json`: candidate clip windows with source timestamps, transcript text, reasons, evidence IDs, warnings, and scores.
 - `review/content-inventory.md`: recipe/profile content inventory with selected story, clip candidates, writing/vault opportunities, weak sections, and repeatable process.
-- `analysis/story-candidates.json`: source-backed story candidates produced by `agent-cutroom content-package`, including recipe/profile metadata, stable source-range IDs, rank aliases, source evidence, score reasons, suggested artifacts, and warnings.
+- `analysis/story-candidates.json`: source-backed story candidates produced by `agent-cutroom content-package`, including recipe/profile metadata, stable source-range IDs, source evidence, score reasons, suggested artifacts, and warnings.
 - `analysis/story-selection.md`: selected story summary with hook, point, evidence, warnings, and the selected edit-plan segment.
 - `edit-plan.json`: keep segments. Each segment has source timing, reason, source windows, evidence, confidence, and warnings.
 - `plans/caption-plan.json`: subtitle format, target media, style, events, warnings, and optional burned output path.

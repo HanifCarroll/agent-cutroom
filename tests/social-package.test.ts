@@ -109,7 +109,7 @@ describe("createSocialPackage", () => {
       timeline,
       platform: "linkedin",
       renderPath: "renders/captioned.mp4",
-      candidateId: storyCandidate.legacyRankId,
+      candidateId: storyCandidate.id,
       candidates: staleHighlightCandidates,
       storyCandidates: contentPackage.storyCandidates,
     });
@@ -121,6 +121,7 @@ describe("createSocialPackage", () => {
     expect(postCopy).toContain(`- Candidate: ${storyCandidate.id}`);
     expect(postCopy).toContain(storyCandidate.transcriptText.slice(0, 32));
     expect(postCopy).not.toContain("stale highlight transcript text");
+    expect(postCopy).not.toContain("story-001");
     expect(socialPackage.titleOptions).toContain(storyCandidate.title);
   });
 });

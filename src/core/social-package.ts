@@ -39,7 +39,7 @@ function selectedStoryCandidate(
 ): StoryCandidate | null {
   if (!storyCandidates) return null;
   if (candidateId) {
-    return storyCandidates.candidates.find((item) => item.id === candidateId || item.legacyRankId === candidateId) ?? null;
+    return storyCandidates.candidates.find((item) => item.id === candidateId) ?? null;
   }
   if (storyCandidates.selectedCandidateId) {
     return storyCandidates.candidates.find((item) => item.id === storyCandidates.selectedCandidateId) ?? null;
@@ -127,7 +127,6 @@ function postCopyLines({
       "## Source",
       "",
       `- Candidate: ${storyCandidate.id}`,
-      `- Rank alias: ${storyCandidate.legacyRankId}`,
       `- Theme: ${storyCandidate.themeLabel}`,
       `- Timestamp: ${sourceTimestamps.join(", ") || "not selected"}`,
       "",

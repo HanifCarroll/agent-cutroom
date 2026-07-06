@@ -470,7 +470,7 @@ async function runContentPackageCommand(project: string, options: ContentPackage
   if (result.editPlan) console.log(`edit plan ${editPlanPath(project)}`);
   if (result.selectedCandidate) {
     console.log(
-      `selected ${result.selectedCandidate.id} (${result.selectedCandidate.legacyRankId}): ${result.selectedCandidate.timestamp} score=${result.selectedCandidate.score.toFixed(3)} ${result.selectedCandidate.title}`,
+      `selected ${result.selectedCandidate.id}: ${result.selectedCandidate.timestamp} score=${result.selectedCandidate.score.toFixed(3)} ${result.selectedCandidate.title}`,
     );
   }
   for (const warning of result.storyCandidates.warnings) console.log(`warning: ${warning}`);
@@ -491,29 +491,6 @@ program
   .option("--tail-padding-ms <ms>", "Source padding after selected story", "1200")
   .description("Build a source-backed content package from a recipe and profile.")
   .action(runContentPackageCommand);
-
-program
-  .command("hanif-content-package")
-  .argument("<project>", "Project directory")
-  .option("--objective <text>", "Selection objective")
-  .option("--target-seconds <seconds>", "Target selected clip duration in seconds", "75")
-  .option("--min-seconds <seconds>", "Minimum candidate duration in seconds", "35")
-  .option("--max-seconds <seconds>", "Maximum candidate duration in seconds", "125")
-  .option("--max <count>", "Maximum story candidates to keep", "8")
-  .option("--select <id>", "Force a specific story candidate id when rewriting the edit plan")
-  .option("--lead-padding-ms <ms>", "Source padding before selected story", "800")
-  .option("--tail-padding-ms <ms>", "Source padding after selected story", "1200")
-  .description("Deprecated alias for `content-package --recipe talking-head-story --profile hanif`.")
-  .action(async (project: string, options: Omit<ContentPackageCliOptions, "recipe" | "profile">) => {
-    console.error(
-      "warning: `hanif-content-package` is deprecated; use `content-package --recipe talking-head-story --profile hanif`.",
-    );
-    await runContentPackageCommand(project, {
-      ...options,
-      recipe: "talking-head-story",
-      profile: "hanif",
-    });
-  });
 
 program
   .command("caption")
