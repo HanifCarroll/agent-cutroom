@@ -248,7 +248,7 @@ server.registerTool(
   {
     title: "Create Content Package",
     description:
-      "Use `content_package` after prepare to build a source-backed content inventory, story candidates, story selection, and selected edit plan from a recipe and content profile.",
+      "Use `content_package` after prepare to build a source-backed content inventory, story candidates, and clip approval slate. Pass approved candidate IDs to create per-clip edit plans.",
     inputSchema: {
       project: ProjectArg,
       recipe: z.string().default("talking-head-story"),
@@ -258,6 +258,7 @@ server.registerTool(
       minSeconds: z.number().positive().optional(),
       maxSeconds: z.number().positive().optional(),
       max: z.number().int().positive().optional(),
+      approve: z.string().optional(),
       select: z.string().optional(),
       leadPaddingMs: z.number().int().nonnegative().optional(),
       tailPaddingMs: z.number().int().nonnegative().optional(),
@@ -274,6 +275,7 @@ server.registerTool(
     minSeconds,
     maxSeconds,
     max,
+    approve,
     select,
     leadPaddingMs,
     tailPaddingMs,
@@ -284,14 +286,16 @@ server.registerTool(
     if (minSeconds) args.push("--min-seconds", String(minSeconds));
     if (maxSeconds) args.push("--max-seconds", String(maxSeconds));
     if (max) args.push("--max", String(max));
+    if (approve) args.push("--approve", approve);
     if (select) args.push("--select", select);
     if (leadPaddingMs !== undefined) args.push("--lead-padding-ms", String(leadPaddingMs));
     if (tailPaddingMs !== undefined) args.push("--tail-padding-ms", String(tailPaddingMs));
     return toolResult(await callCli(args), [
       artifactLink(project, "review/content-inventory.md", "Content inventory"),
       artifactLink(project, "analysis/story-candidates.json", "Story candidates"),
+      artifactLink(project, "review/clip-slate.md", "Clip approval slate"),
+      artifactLink(project, "analysis/clip-slate.json", "Clip approval slate JSON"),
       artifactLink(project, "analysis/story-selection.md", "Story selection"),
-      artifactLink(project, "edit-plan.json", "Selected edit plan"),
     ]);
   },
 );

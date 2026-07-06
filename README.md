@@ -18,7 +18,11 @@ raw video + transcript
   -> analysis/highlight-candidates.json
   -> analysis/story-candidates.json
   -> review/content-inventory.md
+  -> review/clip-slate.md
+  -> analysis/clip-slate.json
+  -> approved clip ids
   -> edit-plan.json
+  -> plans/clips/<candidate-id>/edit-plan.json
   -> renders/rough-cut.mp4
   -> plans/short-form-pacing.json
   -> plans/color-grade.json
@@ -89,16 +93,32 @@ bun dist/cli/index.js content-package ./my-cut \
   --target-seconds 75
 ```
 
-This writes `review/content-inventory.md`, `analysis/story-candidates.json`, `analysis/story-selection.md`, and a selected `edit-plan.json`. The recipe is generic; the `hanif` profile contains the current themes, transcript cleanup, scoring defaults, and post-copy scaffolds for Hanif's videos.
+This writes `review/content-inventory.md`, `analysis/story-candidates.json`, `analysis/clip-slate.json`, `review/clip-slate.md`, and `analysis/story-selection.md`. The recipe is generic; the `hanif` profile contains the current themes, transcript cleanup, scoring defaults, and post-copy scaffolds for Hanif's videos.
+
+Review the proposed clip slate before rendering:
+
+```sh
+open ./my-cut/review/clip-slate.md
+bun dist/cli/index.js content-package ./my-cut \
+  --recipe talking-head-story \
+  --profile hanif \
+  --approve story-000055000-000095000,story-000120000-000170000
+```
+
+Approved clips get their own edit plans under `plans/clips/<candidate-id>/edit-plan.json`. Render a specific approved clip with `--source-plan`.
 
 Create a short-form-paced rough cut:
 
 ```sh
-bun dist/cli/index.js shortform-pacing ./my-cut
-bun dist/cli/index.js render ./my-cut
+bun dist/cli/index.js shortform-pacing ./my-cut \
+  --source-plan plans/clips/story-000055000-000095000/edit-plan.json \
+  --out-plan plans/clips/story-000055000-000095000/paced-edit-plan.json
+bun dist/cli/index.js render ./my-cut \
+  --source-plan plans/clips/story-000055000-000095000/paced-edit-plan.json \
+  --out renders/story-000055000-000095000/rough-cut.mp4
 ```
 
-Before final grade, captions, or release, use the `cutroom-cut-review` skill to audit the proposed cut boundaries and patch `edit-plan.json` when a deterministic cut clips a word, rushes a thought, or breaks a rhetorical chain.
+Before final grade, captions, or release, use the `cutroom-cut-review` skill to audit the proposed cut boundaries and patch the approved clip edit plan when a deterministic cut clips a word, rushes a thought, or breaks a rhetorical chain.
 
 Preview and apply a highlight-protected subject shadow lift when the speaker is underexposed:
 
@@ -143,8 +163,9 @@ agent-cutroom observe <project> --window <id> --summary <text>
 agent-cutroom plan <project>
 agent-cutroom render <project>
 agent-cutroom find-moments <project>
-agent-cutroom content-package <project> [--recipe talking-head-story] [--profile hanif]
+agent-cutroom content-package <project> [--recipe talking-head-story] [--profile hanif] [--approve <ids>]
 agent-cutroom shortform-pacing <project>
+agent-cutroom render <project> [--source-plan <path>]
 agent-cutroom grade-preview <project>
 agent-cutroom grade-apply <project>
 agent-cutroom caption <project>
@@ -230,7 +251,7 @@ See [docs/artifact-contract.md](docs/artifact-contract.md) for the project file 
 
 ## Content Packages
 
-`agent-cutroom content-package` turns prepared transcript/windows/frame evidence into a content inventory, ranked story candidates, one selected story, and the selected edit plan.
+`agent-cutroom content-package` turns prepared transcript/windows/frame evidence into a content inventory, ranked story candidates, and a clip approval slate. It does not create renderable clip plans until candidate IDs are approved.
 
 ```sh
 agent-cutroom content-package <project> \
@@ -240,9 +261,11 @@ agent-cutroom content-package <project> \
 
 The built-in `talking-head-story` recipe owns deterministic candidate generation and edit-plan writing. The `hanif` content profile owns the themes, audience, transcript corrections, score defaults, and social post draft templates. See [docs/content-package.md](docs/content-package.md) for profile shape, workflow, and quality gates.
 
+The approval loop is explicit: inspect `review/clip-slate.md`, approve one or more candidate IDs with `--approve`, then render each approved clip from its own plan in `plans/clips/<candidate-id>/`.
+
 ## Short-Form Polish
 
-`agent-cutroom shortform-pacing` tightens the selected edit plan using transcript word timings, writing `plans/short-form-pacing.json` and updating `edit-plan.json` by default. It preserves short rhetorical question-chain pauses and skips cuts too small to justify a jump. Treat that as a proposed edit, not final editorial judgment: run `cutroom-cut-review` before final user-facing output. `agent-cutroom grade-preview` and `agent-cutroom grade-apply` use a feathered FFmpeg subject mask plus a luma shadow mask to lift the speaker while protecting bright wall pixels. See [docs/short-form-polish.md](docs/short-form-polish.md).
+`agent-cutroom shortform-pacing` tightens the approved edit plan using transcript word timings, writing `plans/short-form-pacing.json` and an output edit plan. It preserves short rhetorical question-chain pauses and skips cuts too small to justify a jump. Treat that as a proposed edit, not final editorial judgment: run `cutroom-cut-review` before final user-facing output. `agent-cutroom grade-preview` and `agent-cutroom grade-apply` use a feathered FFmpeg subject mask plus a luma shadow mask to lift the speaker while protecting bright wall pixels. See [docs/short-form-polish.md](docs/short-form-polish.md).
 
 ## MCP Server
 
@@ -293,4 +316,4 @@ bun run build
 
 ## Status
 
-This is an early public prototype. The stable contract is the file-based workflow: `cutroom.json`, `timeline.json`, `review/review-pack.md`, `review/content-inventory.md`, `analysis/highlight-candidates.json`, `analysis/story-candidates.json`, `analysis/story-selection.md`, `edit-plan.json`, `plans/caption-plan.json`, `plans/platform-export.json`, `plans/social-package.json`, `renders/verify-report.json`, `exports/edit.otio`, and rendered outputs.
+This is an early public prototype. The stable contract is the file-based workflow: `cutroom.json`, `timeline.json`, `review/review-pack.md`, `review/content-inventory.md`, `review/clip-slate.md`, `analysis/highlight-candidates.json`, `analysis/story-candidates.json`, `analysis/clip-slate.json`, `analysis/story-selection.md`, `edit-plan.json`, `plans/clips/<candidate-id>/edit-plan.json`, `plans/caption-plan.json`, `plans/platform-export.json`, `plans/social-package.json`, `renders/verify-report.json`, `exports/edit.otio`, and rendered outputs.

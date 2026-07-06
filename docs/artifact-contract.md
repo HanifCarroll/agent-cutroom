@@ -17,15 +17,21 @@ project/
   analysis/
     highlight-candidates.json
     story-candidates.json
+    clip-slate.json
     story-selection.md
   frames/
   contact-sheets/
   review/
     review-pack.md
     content-inventory.md
+    clip-slate.md
   captions/
     captions.ass
   plans/
+    clips/
+      <candidate-id>/
+        edit-plan.json
+        paced-edit-plan.json
     caption-plan.json
     short-form-pacing.json
     color-grade.json
@@ -68,10 +74,13 @@ project/
 
 - `review/review-pack.md`: agent-facing Markdown review surface with transcript windows and frame references.
 - `analysis/highlight-candidates.json`: candidate clip windows with source timestamps, transcript text, reasons, evidence IDs, warnings, and scores.
-- `review/content-inventory.md`: recipe/profile content inventory with selected story, clip candidates, writing/vault opportunities, weak sections, and repeatable process.
+- `review/content-inventory.md`: recipe/profile content inventory with approval status, clip candidates, writing/vault opportunities, weak sections, and repeatable process.
 - `analysis/story-candidates.json`: source-backed story candidates produced by `agent-cutroom content-package`, including recipe/profile metadata, stable source-range IDs, source evidence, score reasons, suggested artifacts, and warnings.
-- `analysis/story-selection.md`: selected story summary with hook, point, evidence, warnings, and the selected edit-plan segment.
-- `edit-plan.json`: keep segments. Each segment has source timing, reason, source windows, evidence, confidence, and warnings.
+- `analysis/clip-slate.json`: validated clip approval slate with proposed clips, approved candidate IDs, per-clip edit-plan paths, source timestamps, scores, evidence, and warnings.
+- `review/clip-slate.md`: human-readable approval surface. Show this to the operator before rendering multiple clips.
+- `analysis/story-selection.md`: approved story summary with hook, point, evidence, warnings, and approved edit-plan segments.
+- `edit-plan.json`: project-level single-plan/default guard. With one approved clip it mirrors that clip plan; without a single approved clip it contains no renderable segments.
+- `plans/clips/<candidate-id>/edit-plan.json`: source ranges for one approved clip. Each segment has source timing, reason, source windows, evidence, confidence, and warnings.
 - `plans/short-form-pacing.json`: source edit plan path, output edit plan path, pacing options, before/after duration, exact removed pause ranges, and protected rhetorical pauses.
 - `review/cut-review.md`: agent-authored boundary QA with reviewed cut timestamps, transcript phrases, pass/fix decisions, edit-plan patches, and remaining risks.
 - `plans/color-grade.json`: highlight-protected subject-mask shadow-lift method, FFmpeg filter graph, subject and luma mask geometry, grade settings, preview frame paths, and output path.
@@ -82,7 +91,7 @@ project/
 
 ## Render And Release Artifacts
 
-- `renders/rough-cut.mp4`: deterministic render from `edit-plan.json`.
+- `renders/rough-cut.mp4`: deterministic render from `edit-plan.json` or from an explicitly passed approved clip plan.
 - `renders/graded.mp4`: optional subject-mask shadow-lift render.
 - `captions/captions.ass`: ASS subtitle file for active-word caption burn-in.
 - `renders/captioned.mp4`: captioned render when `agent-cutroom caption` burns captions.

@@ -16,6 +16,8 @@ export const EDIT_PLAN_FILE = "edit-plan.json";
 export const HIGHLIGHT_CANDIDATES_FILE = "analysis/highlight-candidates.json";
 export const STORY_CANDIDATES_FILE = "analysis/story-candidates.json";
 export const STORY_SELECTION_FILE = "analysis/story-selection.md";
+export const CLIP_SLATE_FILE = "analysis/clip-slate.json";
+export const CLIP_SLATE_MARKDOWN_FILE = "review/clip-slate.md";
 export const CONTENT_INVENTORY_FILE = "review/content-inventory.md";
 export const CAPTION_PLAN_FILE = "plans/caption-plan.json";
 export const SOCIAL_PACKAGE_FILE = "plans/social-package.json";
@@ -51,6 +53,14 @@ export function storyCandidatesPath(projectDir: string): string {
 
 export function storySelectionPath(projectDir: string): string {
   return join(resolveProjectDir(projectDir), STORY_SELECTION_FILE);
+}
+
+export function clipSlatePath(projectDir: string): string {
+  return join(resolveProjectDir(projectDir), CLIP_SLATE_FILE);
+}
+
+export function clipSlateMarkdownPath(projectDir: string): string {
+  return join(resolveProjectDir(projectDir), CLIP_SLATE_MARKDOWN_FILE);
 }
 
 export function contentInventoryPath(projectDir: string): string {

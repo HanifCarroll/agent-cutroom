@@ -1,6 +1,6 @@
 # Content Package Workflow
 
-`agent-cutroom content-package` turns prepared project evidence into a content inventory, ranked story candidates, one selected story, and an edit plan.
+`agent-cutroom content-package` turns prepared project evidence into a content inventory, ranked story candidates, and a human-readable clip approval slate.
 
 The public command is generic:
 
@@ -14,6 +14,15 @@ agent-cutroom content-package "$PROJECT" \
   --max 8
 ```
 
+Review `review/clip-slate.md`, then approve the clips to make:
+
+```sh
+agent-cutroom content-package "$PROJECT" \
+  --recipe talking-head-story \
+  --profile hanif \
+  --approve story-000055000-000095000,story-000120000-000170000
+```
+
 The recipe owns the deterministic algorithm and output contract. The profile owns the themes, audience, transcript corrections, scoring defaults, and post-copy templates. The built-in `hanif` profile is tuned for Hanif's talking-head videos, but the command can also load a JSON content profile path.
 
 ## Outputs
@@ -22,10 +31,15 @@ The command writes stable project artifacts:
 
 - `review/content-inventory.md`
 - `analysis/story-candidates.json`
+- `analysis/clip-slate.json`
+- `review/clip-slate.md`
 - `analysis/story-selection.md`
-- `edit-plan.json`
+- `plans/clips/<candidate-id>/edit-plan.json` for approved clips
+- `edit-plan.json` as a single approved plan or an empty project-level guard plan
 
-`analysis/story-candidates.json` includes recipe/profile metadata, source metadata, the selected candidate id, stable source-range candidate ids, source timestamps, transcript excerpts, evidence IDs, warnings, and profile-generated post-copy scaffolds.
+`analysis/story-candidates.json` includes recipe/profile metadata, source metadata, the first approved candidate id when present, stable source-range candidate ids, source timestamps, transcript excerpts, evidence IDs, warnings, and profile-generated post-copy scaffolds.
+
+`review/clip-slate.md` is the approval surface. It lists every proposed valuable clip, the source time, point, hook, score, evidence, warnings, and the candidate IDs to approve before rendering.
 
 ## Built-In Hanif Profile
 
@@ -45,9 +59,11 @@ The profile currently covers:
 
 Before rendering:
 
-- The selected story starts cleanly, not mid-sentence.
-- The selected story has a clear point, useful audience, and source timestamps.
-- The selected story references reviewed windows and, when available, recorded observations.
+- `review/clip-slate.md` has been shown to the operator.
+- The operator approved the candidate IDs to make.
+- Each approved story starts cleanly, not mid-sentence.
+- Each approved story has a clear point, useful audience, and source timestamps.
+- Each approved story references reviewed windows and, when available, recorded observations.
 - `review/content-inventory.md` gives usable alternatives, not just one opaque answer.
 
 Before publishing:

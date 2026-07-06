@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   HANIF_CONTENT_PROFILE,
   TALKING_HEAD_STORY_RECIPE,
+  ClipSlateSchema,
   StoryCandidatesSchema,
   buildContentPackage,
 } from "../src/core/content-package/index.js";
@@ -102,29 +103,59 @@ function buildHanif(maxCandidates = 4) {
 }
 
 describe("content package", () => {
-  it("selects a source-backed story candidate and writes a matching edit plan", () => {
+  it("proposes source-backed clip candidates before approval", () => {
     const result = buildHanif();
 
     expect(result.storyCandidates.recipe.id).toBe("talking-head-story");
     expect(result.storyCandidates.profile.id).toBe("hanif");
     expect(result.storyCandidates.candidates.length).toBeGreaterThan(0);
+    expect(result.selectedCandidate).toBeNull();
+    expect(result.editPlan).toBeNull();
+    expect(result.approvedEditPlans).toHaveLength(0);
+    expect(result.clipSlate.approvalStatus).toBe("needs_approval");
+    expect(result.clipSlate.clips[0]?.candidateId).toBe("story-000000000-000085000");
+    expect(result.clipSlate.clips[0]?.approvalStatus).toBe("proposed");
+    expect(result.inventoryMarkdown).toContain("Recipe: talking-head-story v1");
+    expect(result.clipSlateMarkdown).toContain("## Approval Needed");
+    expect(result.selectionMarkdown).toContain("No story candidate has been approved yet.");
+  });
+
+  it("writes per-clip edit plans only for approved candidate ids", () => {
+    const candidateId = buildHanif().clipSlate.clips[0]!.candidateId;
+    const result = buildContentPackage({
+      timeline: contentPackageTimeline,
+      sourcePath: "source/source.mov",
+      title: "Test Tripod Video",
+      recipe: TALKING_HEAD_STORY_RECIPE,
+      profile: HANIF_CONTENT_PROFILE,
+      targetDurationMs: 65_000,
+      minDurationMs: 30_000,
+      maxDurationMs: 90_000,
+      maxCandidates: 4,
+      approvedCandidateIds: [candidateId],
+      leadPaddingMs: 800,
+      tailPaddingMs: 1200,
+    });
+
+    expect(result.selectedCandidate?.id).toBe(candidateId);
     expect(result.selectedCandidate?.suggestedArtifacts).toContain("clip");
     expect(result.selectedCandidate?.theme).toBe("public-building-proof");
-    expect(result.selectedCandidate?.id).toBe("story-000000000-000085000");
     expect(result.editPlan?.segments).toHaveLength(1);
     expect(result.editPlan?.segments[0]?.sourceStartMs).toBe(0);
     expect(result.editPlan?.segments[0]?.sourceEndMs).toBe(86_200);
     expect(result.editPlan?.segments[0]?.sourceWindowIds).toContain("window-001");
-    expect(result.inventoryMarkdown).toContain("Recipe: talking-head-story v1");
-    expect(result.selectionMarkdown).toContain("## Selected Candidate");
+    expect(result.approvedEditPlans).toHaveLength(1);
+    expect(result.approvedEditPlans[0]?.editPlanPath).toBe(`plans/clips/${candidateId}/edit-plan.json`);
+    expect(result.clipSlate.approvalStatus).toBe("approved");
+    expect(result.clipSlate.clips.find((clip) => clip.candidateId === candidateId)?.approvalStatus).toBe("approved");
   });
 
   it("keeps candidate ids stable when the retained count changes", () => {
     const one = buildHanif(1);
     const many = buildHanif(4);
 
-    expect(one.selectedCandidate?.id).toBe(many.selectedCandidate?.id);
-    expect(one.selectedCandidate?.id).toMatch(/^story-\d{9}-\d{9}$/);
+    expect(one.storyCandidates.candidates[0]?.id).toBe(many.storyCandidates.candidates[0]?.id);
+    expect(one.storyCandidates.candidates[0]?.id).toMatch(/^story-\d{9}-\d{9}$/);
   });
 
   it("does not let lead padding pull prior sentence words into the selected edit", () => {
@@ -268,9 +299,8 @@ describe("content package", () => {
 
   it("validates persisted story candidate artifacts", () => {
     const result = buildHanif();
-    expect(StoryCandidatesSchema.parse(result.storyCandidates).selectedCandidateId).toBe(
-      result.selectedCandidate?.id,
-    );
+    expect(StoryCandidatesSchema.parse(result.storyCandidates).selectedCandidateId).toBeNull();
+    expect(ClipSlateSchema.parse(result.clipSlate).approvalStatus).toBe("needs_approval");
     expect(() => StoryCandidatesSchema.parse({ version: 1, candidates: [{ id: "missing-fields" }] })).toThrow();
   });
 });

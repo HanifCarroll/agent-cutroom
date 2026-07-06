@@ -156,12 +156,64 @@ export const StoryCandidatesSchema = z.object({
 });
 export type StoryCandidates = z.infer<typeof StoryCandidatesSchema>;
 
+export const ClipSlateItemSchema = z.object({
+  candidateId: z.string(),
+  rank: z.number().int().positive(),
+  title: z.string(),
+  timestamp: z.string(),
+  sourceStartMs: MsSchema,
+  sourceEndMs: MsSchema,
+  durationMs: MsSchema,
+  score: z.number().min(0).max(1),
+  confidence: z.number().min(0).max(1),
+  theme: z.string(),
+  themeLabel: z.string(),
+  audience: z.string(),
+  point: z.string(),
+  hook: z.string(),
+  suggestedArtifacts: z.array(SuggestedArtifactSchema),
+  approvalStatus: z.enum(["proposed", "approved"]),
+  editPlanPath: z.string().nullable(),
+  evidence: z.array(z.string()).default([]),
+  warnings: z.array(z.string()).default([]),
+});
+export type ClipSlateItem = z.infer<typeof ClipSlateItemSchema>;
+
+export const ClipSlateSchema = z.object({
+  version: z.literal(CUTROOM_VERSION),
+  createdAt: z.string(),
+  recipe: ContentRecipeSchema,
+  profile: z.object({
+    id: z.string(),
+    version: z.number().int().positive(),
+    label: z.string(),
+  }),
+  source: StoryCandidatesSchema.shape.source,
+  objective: z.string(),
+  approvalStatus: z.enum(["needs_approval", "approved"]),
+  proposedClipCount: z.number().int().nonnegative(),
+  approvedCandidateIds: z.array(z.string()),
+  clips: z.array(ClipSlateItemSchema),
+  warnings: z.array(z.string()).default([]),
+});
+export type ClipSlate = z.infer<typeof ClipSlateSchema>;
+
+export interface ApprovedClipPlan {
+  candidateId: string;
+  editPlanPath: string;
+  editPlan: EditPlan;
+}
+
 export interface ContentPackage {
   storyCandidates: StoryCandidates;
+  clipSlate: ClipSlate;
+  clipSlateMarkdown: string;
   inventoryMarkdown: string;
   selectionMarkdown: string;
   editPlan: EditPlan | null;
   selectedCandidate: StoryCandidate | null;
+  approvedCandidates: StoryCandidate[];
+  approvedEditPlans: ApprovedClipPlan[];
 }
 
 export interface BuildContentPackageOptions {
@@ -176,6 +228,7 @@ export interface BuildContentPackageOptions {
   maxDurationMs?: number;
   maxCandidates?: number;
   selectedId?: string | null;
+  approvedCandidateIds?: string[];
   leadPaddingMs?: number;
   tailPaddingMs?: number;
 }

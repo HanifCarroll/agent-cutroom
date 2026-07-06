@@ -2,7 +2,7 @@ import { mkdir, stat, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { readJson, writeJson } from "./files.js";
 import { runCommand } from "./process.js";
-import { captionPlanPath, editPlanPath } from "./project.js";
+import { captionPlanPath } from "./project.js";
 import {
   CUTROOM_VERSION,
   CaptionPlanSchema,
@@ -288,8 +288,8 @@ export async function burnCaptionPlan({
   return plan.outputPath;
 }
 
-export async function readProjectEditPlan(projectDir: string): Promise<EditPlan | null> {
-  const path = editPlanPath(projectDir);
+export async function readProjectEditPlan(projectDir: string, sourcePlanPath = "edit-plan.json"): Promise<EditPlan | null> {
+  const path = resolve(projectDir, sourcePlanPath);
   try {
     await stat(path);
   } catch (error) {

@@ -5,6 +5,8 @@ import { join, resolve } from "node:path";
 import { commandExists, runCommand } from "../core/process.js";
 import {
   captionPlanPath,
+  clipSlateMarkdownPath,
+  clipSlatePath,
   colorGradePlanPath,
   contentInventoryPath,
   createProject,
@@ -400,16 +402,18 @@ program
 program
   .command("render")
   .argument("<project>", "Project directory")
+  .option("--source-plan <path>", "Source edit plan path, relative to project", "edit-plan.json")
   .option("--out <path>", "Output path relative to project", "renders/rough-cut.mp4")
-  .description("Render edit-plan.json to an MP4 rough cut.")
-  .action(async (project: string, options: { out: string }) => {
-    const plan = await readJson(editPlanPath(project), EditPlanSchema);
+  .description("Render an edit plan to an MP4 rough cut.")
+  .action(async (project: string, options: { sourcePlan: string; out: string }) => {
+    const plan = await readJson(resolve(project, options.sourcePlan), EditPlanSchema);
     await mkdir(resolve(project, "renders"), { recursive: true });
     const output = await renderEditPlan({
       projectDir: project,
       plan,
       outputRelativePath: options.out,
     });
+    console.log(`source plan ${resolve(project, options.sourcePlan)}`);
     console.log(`rendered ${join(resolve(project), output)}`);
   });
 
@@ -452,8 +456,18 @@ interface ContentPackageCliOptions {
   maxSeconds: string;
   max: string;
   select?: string;
+  approve?: string;
   leadPaddingMs: string;
   tailPaddingMs: string;
+}
+
+function parseApprovedCandidateIds(raw?: string): string[] {
+  return raw
+    ? raw
+        .split(",")
+        .map((id) => id.trim())
+        .filter(Boolean)
+    : [];
 }
 
 async function runContentPackageCommand(project: string, options: ContentPackageCliOptions): Promise<void> {
@@ -474,20 +488,25 @@ async function runContentPackageCommand(project: string, options: ContentPackage
     maxDurationMs: Math.max(1000, Math.round(Number(options.maxSeconds) * 1000)),
     maxCandidates: Math.max(1, Number(options.max)),
     selectedId: options.select,
+    approvedCandidateIds: parseApprovedCandidateIds(options.approve),
     leadPaddingMs: Math.max(0, Number(options.leadPaddingMs)),
     tailPaddingMs: Math.max(0, Number(options.tailPaddingMs)),
   });
   console.log(`wrote ${result.storyCandidates.candidates.length} story candidates`);
   console.log(`inventory ${contentInventoryPath(project)}`);
   console.log(`candidates ${storyCandidatesPath(project)}`);
+  console.log(`clip slate ${clipSlateMarkdownPath(project)}`);
+  console.log(`clip slate json ${clipSlatePath(project)}`);
   console.log(`selection ${storySelectionPath(project)}`);
-  if (result.editPlan) console.log(`edit plan ${editPlanPath(project)}`);
-  if (result.selectedCandidate) {
-    console.log(
-      `selected ${result.selectedCandidate.id}: ${result.selectedCandidate.timestamp} score=${result.selectedCandidate.score.toFixed(3)} ${result.selectedCandidate.title}`,
-    );
+  if (result.approvedEditPlans.length === 0) {
+    console.log("approval needed: review the clip slate before rendering clips");
+  } else {
+    for (const approvedPlan of result.approvedEditPlans) {
+      console.log(`approved clip plan ${approvedPlan.candidateId}: ${resolve(project, approvedPlan.editPlanPath)}`);
+    }
+    if (result.editPlan) console.log(`single approved edit plan ${editPlanPath(project)}`);
   }
-  for (const warning of result.storyCandidates.warnings) console.log(`warning: ${warning}`);
+  for (const warning of result.clipSlate.warnings) console.log(`warning: ${warning}`);
 }
 
 program
@@ -500,7 +519,8 @@ program
   .option("--min-seconds <seconds>", "Minimum candidate duration in seconds", "35")
   .option("--max-seconds <seconds>", "Maximum candidate duration in seconds", "125")
   .option("--max <count>", "Maximum story candidates to keep", "8")
-  .option("--select <id>", "Force a story candidate id when rewriting the edit plan")
+  .option("--approve <ids>", "Comma-separated story candidate IDs approved for clip edit plans")
+  .option("--select <id>", "Approve one story candidate ID and write a single selected edit plan")
   .option("--lead-padding-ms <ms>", "Source padding before selected story", "800")
   .option("--tail-padding-ms <ms>", "Source padding after selected story", "1200")
   .description("Build a source-backed content package from a recipe and profile.")
@@ -671,6 +691,7 @@ program
   .command("caption")
   .argument("<project>", "Project directory")
   .option("--target <path>", "Media path to caption, relative to project", "renders/rough-cut.mp4")
+  .option("--source-plan <path>", "Edit plan path for transcript timing, relative to project", "edit-plan.json")
   .option("--format <format>", "Subtitle format: ass|srt|vtt", "ass")
   .option("--subtitle-out <path>", "Subtitle output path, relative to project")
   .option("--out <path>", "Burned caption video path, relative to project", "renders/captioned.mp4")
@@ -682,6 +703,7 @@ program
       project: string,
       options: {
         target: string;
+        sourcePlan: string;
         format: string;
         subtitleOut?: string;
         out: string;
@@ -698,7 +720,7 @@ program
       const editPlan =
         options.editPlanTiming === false || options.target === manifest.sourcePath
           ? null
-          : await readProjectEditPlan(project);
+          : await readProjectEditPlan(project, options.sourcePlan);
       const subtitlePath = options.subtitleOut ?? `captions/captions.${format}`;
       const plan = await createCaptionPlan({
         projectDir: project,

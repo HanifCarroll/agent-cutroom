@@ -84,7 +84,7 @@ describe("createSocialPackage", () => {
       maxDurationMs: 90_000,
       maxCandidates: 2,
     });
-    const storyCandidate = contentPackage.selectedCandidate;
+    const storyCandidate = contentPackage.storyCandidates.candidates[0];
     if (!storyCandidate) throw new Error("Expected a selected story candidate.");
     const staleHighlightCandidates: HighlightCandidates = {
       version: 1,

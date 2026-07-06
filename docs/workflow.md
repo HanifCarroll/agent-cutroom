@@ -48,19 +48,35 @@ This writes:
 
 - `review/content-inventory.md`
 - `analysis/story-candidates.json`
+- `analysis/clip-slate.json`
+- `review/clip-slate.md`
 - `analysis/story-selection.md`
-- `edit-plan.json`
 
-The recipe is generic. The profile supplies the content themes, audience, transcript cleanup, defaults, and post-copy templates. Inspect the inventory and selected story before rendering.
+The recipe is generic. The profile supplies the content themes, audience, transcript cleanup, defaults, and post-copy templates. Inspect the inventory and clip slate before rendering.
+
+Approve the clips to make:
+
+```sh
+agent-cutroom content-package cutroom-project \
+  --recipe talking-head-story \
+  --profile hanif \
+  --approve story-000055000-000095000,story-000120000-000170000
+```
+
+Approved clips get edit plans under `plans/clips/<candidate-id>/edit-plan.json`.
 
 ## 5. Tighten Pacing, Review Cuts, And Render
 
 ```sh
-agent-cutroom shortform-pacing cutroom-project
-agent-cutroom render cutroom-project
+agent-cutroom shortform-pacing cutroom-project \
+  --source-plan plans/clips/story-000055000-000095000/edit-plan.json \
+  --out-plan plans/clips/story-000055000-000095000/paced-edit-plan.json
+agent-cutroom render cutroom-project \
+  --source-plan plans/clips/story-000055000-000095000/paced-edit-plan.json \
+  --out renders/story-000055000-000095000/rough-cut.mp4
 ```
 
-`shortform-pacing` uses transcript word timings to remove long pauses from the selected edit plan and writes `plans/short-form-pacing.json`. `render` creates `renders/rough-cut.mp4`.
+`shortform-pacing` uses transcript word timings to remove long pauses from the approved edit plan and writes `plans/short-form-pacing.json`. `render` creates the requested rough-cut MP4.
 
 Use the `cutroom-cut-review` skill before final grade, captions, release, or user-facing export. The skill makes the agent inspect risky boundaries, approve or patch them, and write `review/cut-review.md`.
 
@@ -87,7 +103,7 @@ agent-cutroom verify cutroom-project --target renders/captioned.mp4
 
 `grade-preview` writes preview frames for the subject-mask shadow lift. The agent should inspect those frames before running `grade-apply`.
 
-`caption` uses real transcript word timings from `segments[].words[]` and maps them through `edit-plan.json` so active-word subtitles line up with the rough cut. It writes `plans/caption-plan.json`, `captions/captions.ass`, and `renders/captioned.mp4`.
+`caption` uses real transcript word timings from `segments[].words[]` and maps them through the chosen edit plan so active-word subtitles line up with the rough cut. Pass `--source-plan <clip-edit-plan>` when captioning an approved clip. It writes `plans/caption-plan.json`, `captions/captions.ass`, and the requested captioned render.
 
 `verify` probes, decodes, and extracts preview frames for the render, then writes `renders/verify-report.json`.
 
