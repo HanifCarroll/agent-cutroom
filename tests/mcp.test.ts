@@ -15,9 +15,19 @@ describe("MCP server", () => {
       await client.connect(transport);
       const tools = await client.listTools();
       expect(tools.tools.map((tool) => tool.name)).toEqual(
-        expect.arrayContaining(["doctor", "prepare_project", "content_package", "caption", "social_package", "export_otio"]),
+        expect.arrayContaining([
+          "doctor",
+          "prepare_project",
+          "content_package",
+          "shortform_pacing",
+          "grade_preview",
+          "grade_apply",
+          "caption",
+          "social_package",
+          "export_otio",
+        ]),
       );
-      expect(tools.tools.length).toBe(12);
+      expect(tools.tools.length).toBe(15);
 
       const prompts = await client.listPrompts();
       expect(prompts.prompts.map((prompt) => prompt.name)).toEqual(

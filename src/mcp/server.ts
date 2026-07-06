@@ -297,6 +297,153 @@ server.registerTool(
 );
 
 server.registerTool(
+  "shortform_pacing",
+  {
+    title: "Apply Short-Form Pacing",
+    description:
+      "Use `shortform_pacing` after content_package or plan to tighten edit-plan.json by cutting transcript-word pauses while preserving small breath gaps.",
+    inputSchema: {
+      project: ProjectArg,
+      sourcePlan: z.string().default("edit-plan.json"),
+      outPlan: z.string().default("edit-plan.json"),
+      minPauseMs: z.number().int().nonnegative().optional(),
+      keepPauseMs: z.number().int().nonnegative().optional(),
+      leadInMs: z.number().int().nonnegative().optional(),
+      tailOutMs: z.number().int().nonnegative().optional(),
+    },
+    outputSchema: { status: z.string(), text: z.string(), resources: z.array(z.object({ uri: z.string(), name: z.string() })) },
+    annotations: { readOnlyHint: false, openWorldHint: false },
+  },
+  async ({ project, sourcePlan, outPlan, minPauseMs, keepPauseMs, leadInMs, tailOutMs }) => {
+    const args = ["shortform-pacing", project, "--source-plan", sourcePlan, "--out-plan", outPlan];
+    if (minPauseMs !== undefined) args.push("--min-pause-ms", String(minPauseMs));
+    if (keepPauseMs !== undefined) args.push("--keep-pause-ms", String(keepPauseMs));
+    if (leadInMs !== undefined) args.push("--lead-in-ms", String(leadInMs));
+    if (tailOutMs !== undefined) args.push("--tail-out-ms", String(tailOutMs));
+    return toolResult(await callCli(args), [
+      artifactLink(project, outPlan, "Short-form edit plan"),
+      artifactLink(project, "plans/short-form-pacing.json", "Short-form pacing plan"),
+    ]);
+  },
+);
+
+server.registerTool(
+  "grade_preview",
+  {
+    title: "Preview Subject Mask Grade",
+    description:
+      "Use `grade_preview` after rendering to write preview frames for a feathered subject-mask shadow lift.",
+    inputSchema: {
+      project: ProjectArg,
+      target: z.string().default("renders/rough-cut.mp4"),
+      outDir: z.string().default("review/color-grade"),
+      frames: z.number().int().positive().optional(),
+      centerXPct: z.number().min(0).max(1).optional(),
+      centerYPct: z.number().min(0).max(1).optional(),
+      radiusXPct: z.number().positive().optional(),
+      radiusYPct: z.number().positive().optional(),
+      featherPx: z.number().nonnegative().optional(),
+      brightness: z.number().optional(),
+      contrast: z.number().positive().optional(),
+      gamma: z.number().positive().optional(),
+      gammaWeight: z.number().min(0).max(1).optional(),
+      saturation: z.number().positive().optional(),
+    },
+    outputSchema: { status: z.string(), text: z.string(), resources: z.array(z.object({ uri: z.string(), name: z.string() })) },
+    annotations: { readOnlyHint: false, openWorldHint: false },
+  },
+  async ({
+    project,
+    target,
+    outDir,
+    frames,
+    centerXPct,
+    centerYPct,
+    radiusXPct,
+    radiusYPct,
+    featherPx,
+    brightness,
+    contrast,
+    gamma,
+    gammaWeight,
+    saturation,
+  }) => {
+    const args = ["grade-preview", project, "--target", target, "--out-dir", outDir];
+    if (frames !== undefined) args.push("--frames", String(frames));
+    if (centerXPct !== undefined) args.push("--center-x-pct", String(centerXPct));
+    if (centerYPct !== undefined) args.push("--center-y-pct", String(centerYPct));
+    if (radiusXPct !== undefined) args.push("--radius-x-pct", String(radiusXPct));
+    if (radiusYPct !== undefined) args.push("--radius-y-pct", String(radiusYPct));
+    if (featherPx !== undefined) args.push("--feather-px", String(featherPx));
+    if (brightness !== undefined) args.push("--brightness", String(brightness));
+    if (contrast !== undefined) args.push("--contrast", String(contrast));
+    if (gamma !== undefined) args.push("--gamma", String(gamma));
+    if (gammaWeight !== undefined) args.push("--gamma-weight", String(gammaWeight));
+    if (saturation !== undefined) args.push("--saturation", String(saturation));
+    return toolResult(await callCli(args), [
+      artifactLink(project, "plans/color-grade.json", "Color grade plan"),
+    ]);
+  },
+);
+
+server.registerTool(
+  "grade_apply",
+  {
+    title: "Apply Subject Mask Grade",
+    description:
+      "Use `grade_apply` after rendering to create a shadow-lifted render through a feathered subject mask.",
+    inputSchema: {
+      project: ProjectArg,
+      target: z.string().default("renders/rough-cut.mp4"),
+      out: z.string().default("renders/graded.mp4"),
+      centerXPct: z.number().min(0).max(1).optional(),
+      centerYPct: z.number().min(0).max(1).optional(),
+      radiusXPct: z.number().positive().optional(),
+      radiusYPct: z.number().positive().optional(),
+      featherPx: z.number().nonnegative().optional(),
+      brightness: z.number().optional(),
+      contrast: z.number().positive().optional(),
+      gamma: z.number().positive().optional(),
+      gammaWeight: z.number().min(0).max(1).optional(),
+      saturation: z.number().positive().optional(),
+    },
+    outputSchema: { status: z.string(), text: z.string(), resources: z.array(z.object({ uri: z.string(), name: z.string() })) },
+    annotations: { readOnlyHint: false, openWorldHint: false },
+  },
+  async ({
+    project,
+    target,
+    out,
+    centerXPct,
+    centerYPct,
+    radiusXPct,
+    radiusYPct,
+    featherPx,
+    brightness,
+    contrast,
+    gamma,
+    gammaWeight,
+    saturation,
+  }) => {
+    const args = ["grade-apply", project, "--target", target, "--out", out];
+    if (centerXPct !== undefined) args.push("--center-x-pct", String(centerXPct));
+    if (centerYPct !== undefined) args.push("--center-y-pct", String(centerYPct));
+    if (radiusXPct !== undefined) args.push("--radius-x-pct", String(radiusXPct));
+    if (radiusYPct !== undefined) args.push("--radius-y-pct", String(radiusYPct));
+    if (featherPx !== undefined) args.push("--feather-px", String(featherPx));
+    if (brightness !== undefined) args.push("--brightness", String(brightness));
+    if (contrast !== undefined) args.push("--contrast", String(contrast));
+    if (gamma !== undefined) args.push("--gamma", String(gamma));
+    if (gammaWeight !== undefined) args.push("--gamma-weight", String(gammaWeight));
+    if (saturation !== undefined) args.push("--saturation", String(saturation));
+    return toolResult(await callCli(args), [
+      artifactLink(project, out, "Graded render"),
+      artifactLink(project, "plans/color-grade.json", "Color grade plan"),
+    ]);
+  },
+);
+
+server.registerTool(
   "caption",
   {
     title: "Create Captions",

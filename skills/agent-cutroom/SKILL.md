@@ -5,7 +5,7 @@ description: Cutroom workflow for agent-driven video review and editing with Age
 
 # Agent Cutroom
 
-Use Agent Cutroom as a deterministic media bench. The agent makes editorial and visual judgments; the CLI creates inspectable evidence, metadata, edit plans, and renders.
+Use Agent Cutroom as a deterministic media bench. The agent makes editorial and visual judgments; the CLI creates inspectable evidence, metadata, edit plans, polish plans, and renders.
 
 Set the checkout path once:
 
@@ -102,23 +102,27 @@ cutroom find-moments "$PROJECT" --objective "$OBJECTIVE" --target-seconds "$TARG
 
 Inspect `analysis/highlight-candidates.json` before selecting a clip or trusting a recommendation.
 
-7. Plan and render.
+7. Tighten pacing and render.
 
 ```sh
-cutroom plan "$PROJECT"
+cutroom shortform-pacing "$PROJECT"
 cutroom render "$PROJECT"
 ```
 
-Inspect `edit-plan.json` before trusting the render. Verify the output with `ffprobe` and a visual preview. Finish this step when `renders/rough-cut.mp4` exists and the rendered cut matches the recorded observations.
+Inspect `plans/short-form-pacing.json` and `edit-plan.json` before trusting the render. If no selected edit plan exists yet, run `plan` before `shortform-pacing`. Finish this step when `renders/rough-cut.mp4` exists and the rendered cut matches the recorded observations.
 
-8. Caption, verify, package, and export as needed.
+8. Grade, caption, verify, package, and export as needed.
 
 ```sh
-cutroom caption "$PROJECT"
-cutroom verify "$PROJECT"
+cutroom grade-preview "$PROJECT" --target renders/rough-cut.mp4
+cutroom grade-apply "$PROJECT" --target renders/rough-cut.mp4 --out renders/graded.mp4
+cutroom caption "$PROJECT" --target renders/graded.mp4 --out renders/captioned.mp4
+cutroom verify "$PROJECT" --target renders/captioned.mp4
 cutroom social-package "$PROJECT" --platform instagram
 cutroom export-otio "$PROJECT"
 ```
+
+Run `grade-preview` when the subject is too dark. Inspect the preview frames under `review/color-grade/`, then adjust mask or grade options before `grade-apply` when needed.
 
 Use `caption` only when real word timings exist. It writes `plans/caption-plan.json`, `captions/captions.ass`, and, by default, `renders/captioned.mp4`.
 

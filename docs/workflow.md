@@ -53,16 +53,16 @@ This writes:
 
 The recipe is generic. The profile supplies the content themes, audience, transcript cleanup, defaults, and post-copy templates. Inspect the inventory and selected story before rendering.
 
-## 5. Plan And Render
+## 5. Tighten Pacing And Render
 
 ```sh
-agent-cutroom plan cutroom-project
+agent-cutroom shortform-pacing cutroom-project
 agent-cutroom render cutroom-project
 ```
 
-`plan` removes long silence ranges and windows marked as `cut`. `render` creates `renders/rough-cut.mp4`.
+`shortform-pacing` uses transcript word timings to remove long pauses from the selected edit plan and writes `plans/short-form-pacing.json`. `render` creates `renders/rough-cut.mp4`.
 
-If `content-package` already wrote the selected `edit-plan.json`, run `render` directly after reviewing the selection.
+If no content package exists yet, run `plan` first to create `edit-plan.json`, then run `shortform-pacing`.
 
 ## 6. Find Candidate Moments
 
@@ -74,12 +74,16 @@ agent-cutroom find-moments cutroom-project \
 
 This writes `analysis/highlight-candidates.json` with candidate windows, reasons, evidence, warnings, and source timestamps.
 
-## 7. Caption And Verify
+## 7. Grade, Caption, And Verify
 
 ```sh
-agent-cutroom caption cutroom-project
-agent-cutroom verify cutroom-project
+agent-cutroom grade-preview cutroom-project --target renders/rough-cut.mp4
+agent-cutroom grade-apply cutroom-project --target renders/rough-cut.mp4 --out renders/graded.mp4
+agent-cutroom caption cutroom-project --target renders/graded.mp4 --out renders/captioned.mp4
+agent-cutroom verify cutroom-project --target renders/captioned.mp4
 ```
+
+`grade-preview` writes preview frames for the subject-mask shadow lift. The agent should inspect those frames before running `grade-apply`.
 
 `caption` uses real transcript word timings from `segments[].words[]` and maps them through `edit-plan.json` so active-word subtitles line up with the rough cut. It writes `plans/caption-plan.json`, `captions/captions.ass`, and `renders/captioned.mp4`.
 

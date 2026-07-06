@@ -27,9 +27,12 @@ project/
     captions.ass
   plans/
     caption-plan.json
+    short-form-pacing.json
+    color-grade.json
     social-package.json
   renders/
     rough-cut.mp4
+    graded.mp4
     captioned.mp4
     verify-report.json
     verify-frames/
@@ -69,6 +72,8 @@ project/
 - `analysis/story-candidates.json`: source-backed story candidates produced by `agent-cutroom content-package`, including recipe/profile metadata, stable source-range IDs, source evidence, score reasons, suggested artifacts, and warnings.
 - `analysis/story-selection.md`: selected story summary with hook, point, evidence, warnings, and the selected edit-plan segment.
 - `edit-plan.json`: keep segments. Each segment has source timing, reason, source windows, evidence, confidence, and warnings.
+- `plans/short-form-pacing.json`: source edit plan path, output edit plan path, pacing options, before/after duration, and exact removed pause ranges.
+- `plans/color-grade.json`: subject-mask shadow-lift method, FFmpeg filter graph, mask geometry, grade settings, preview frame paths, and output path.
 - `plans/caption-plan.json`: subtitle format, target media, style, events, warnings, and optional burned output path.
 - `plans/social-package.json`: platform, style pack, render path, cover frame, title options, hashtags, source timestamps, and warnings.
 - `hyperframes/brief.md`: handoff brief for a polished HyperFrames composition.
@@ -76,6 +81,7 @@ project/
 ## Render And Release Artifacts
 
 - `renders/rough-cut.mp4`: deterministic render from `edit-plan.json`.
+- `renders/graded.mp4`: optional subject-mask shadow-lift render.
 - `captions/captions.ass`: ASS subtitle file for active-word caption burn-in.
 - `renders/captioned.mp4`: captioned render when `agent-cutroom caption` burns captions.
 - `renders/verify-report.json`: existence, probe, duration, decode, and preview-frame verification.

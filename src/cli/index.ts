@@ -5,12 +5,14 @@ import { join, resolve } from "node:path";
 import { commandExists, runCommand } from "../core/process.js";
 import {
   captionPlanPath,
+  colorGradePlanPath,
   contentInventoryPath,
   createProject,
   editPlanPath,
   highlightCandidatesPath,
   readManifest,
   readTimeline,
+  shortFormPacingPath,
   socialPackagePath,
   storyCandidatesPath,
   storySelectionPath,
@@ -53,6 +55,16 @@ import {
   readStoryCandidates,
   writeContentPackage,
 } from "../core/content-package/index.js";
+import {
+  DEFAULT_SHORT_FORM_PACING_OPTIONS,
+  createShortFormPacing,
+} from "../core/pacing.js";
+import {
+  DEFAULT_SUBJECT_MASK_GRADE_OPTIONS,
+  applySubjectMaskGrade,
+  previewSubjectMaskGrade,
+  type SubjectMaskGradeOptions,
+} from "../core/color-grade.js";
 
 const program = new Command();
 
@@ -491,6 +503,148 @@ program
   .option("--tail-padding-ms <ms>", "Source padding after selected story", "1200")
   .description("Build a source-backed content package from a recipe and profile.")
   .action(runContentPackageCommand);
+
+program
+  .command("shortform-pacing")
+  .argument("<project>", "Project directory")
+  .option("--source-plan <path>", "Source edit plan path, relative to project", "edit-plan.json")
+  .option("--out-plan <path>", "Output edit plan path, relative to project", "edit-plan.json")
+  .option("--min-pause-ms <ms>", "Transcript-word pause duration to tighten", String(DEFAULT_SHORT_FORM_PACING_OPTIONS.minPauseMs))
+  .option("--keep-pause-ms <ms>", "Total pause duration to preserve around each cut", String(DEFAULT_SHORT_FORM_PACING_OPTIONS.keepPauseMs))
+  .option("--lead-in-ms <ms>", "Speech lead-in to preserve at the start of each segment", String(DEFAULT_SHORT_FORM_PACING_OPTIONS.leadInMs))
+  .option("--tail-out-ms <ms>", "Speech tail-out to preserve at the end of each segment", String(DEFAULT_SHORT_FORM_PACING_OPTIONS.tailOutMs))
+  .option("--min-cut-ms <ms>", "Minimum removed gap duration", String(DEFAULT_SHORT_FORM_PACING_OPTIONS.minCutMs))
+  .option("--min-segment-ms <ms>", "Minimum kept segment duration", String(DEFAULT_SHORT_FORM_PACING_OPTIONS.minSegmentMs))
+  .description("Tighten edit-plan.json for modern short-form pacing using transcript word timings.")
+  .action(
+    async (
+      project: string,
+      options: {
+        sourcePlan: string;
+        outPlan: string;
+        minPauseMs: string;
+        keepPauseMs: string;
+        leadInMs: string;
+        tailOutMs: string;
+        minCutMs: string;
+        minSegmentMs: string;
+      },
+    ) => {
+      const timeline = await readTimeline(project);
+      const sourcePlanPath = resolve(project, options.sourcePlan);
+      const outputPlanPath = resolve(project, options.outPlan);
+      const editPlan = await readJson(sourcePlanPath, EditPlanSchema);
+      const result = createShortFormPacing({
+        timeline,
+        editPlan,
+        sourceEditPlanPath: options.sourcePlan,
+        outputEditPlanPath: options.outPlan,
+        options: {
+          minPauseMs: Number(options.minPauseMs),
+          keepPauseMs: Number(options.keepPauseMs),
+          leadInMs: Number(options.leadInMs),
+          tailOutMs: Number(options.tailOutMs),
+          minCutMs: Number(options.minCutMs),
+          minSegmentMs: Number(options.minSegmentMs),
+        },
+      });
+      await writeJson(outputPlanPath, result.editPlan);
+      await writeJson(shortFormPacingPath(project), result.pacingPlan);
+      console.log(`tightened ${result.pacingPlan.beforeDurationMs}ms -> ${result.pacingPlan.afterDurationMs}ms`);
+      console.log(`removed ${result.pacingPlan.removedMs}ms across ${result.pacingPlan.cuts.length} cuts`);
+      console.log(`edit plan ${outputPlanPath}`);
+      console.log(`pacing plan ${shortFormPacingPath(project)}`);
+      for (const warning of result.pacingPlan.warnings) console.log(`warning: ${warning}`);
+    },
+  );
+
+interface GradeCliOptions {
+  target: string;
+  out?: string;
+  outDir?: string;
+  frames?: string;
+  centerXPct: string;
+  centerYPct: string;
+  radiusXPct: string;
+  radiusYPct: string;
+  featherPx: string;
+  brightness: string;
+  contrast: string;
+  gamma: string;
+  gammaWeight: string;
+  saturation: string;
+}
+
+function gradeOptionsFromCli(options: GradeCliOptions): Partial<SubjectMaskGradeOptions> {
+  return {
+    centerXPct: Number(options.centerXPct),
+    centerYPct: Number(options.centerYPct),
+    radiusXPct: Number(options.radiusXPct),
+    radiusYPct: Number(options.radiusYPct),
+    featherPx: Number(options.featherPx),
+    brightness: Number(options.brightness),
+    contrast: Number(options.contrast),
+    gamma: Number(options.gamma),
+    gammaWeight: Number(options.gammaWeight),
+    saturation: Number(options.saturation),
+  };
+}
+
+function addGradeOptions(command: Command): Command {
+  return command
+    .option("--center-x-pct <n>", "Subject mask center X as a 0-1 percentage", String(DEFAULT_SUBJECT_MASK_GRADE_OPTIONS.centerXPct))
+    .option("--center-y-pct <n>", "Subject mask center Y as a 0-1 percentage", String(DEFAULT_SUBJECT_MASK_GRADE_OPTIONS.centerYPct))
+    .option("--radius-x-pct <n>", "Subject mask horizontal radius as a 0-1 percentage", String(DEFAULT_SUBJECT_MASK_GRADE_OPTIONS.radiusXPct))
+    .option("--radius-y-pct <n>", "Subject mask vertical radius as a 0-1 percentage", String(DEFAULT_SUBJECT_MASK_GRADE_OPTIONS.radiusYPct))
+    .option("--feather-px <px>", "Subject mask feather radius in pixels", String(DEFAULT_SUBJECT_MASK_GRADE_OPTIONS.featherPx))
+    .option("--brightness <n>", "FFmpeg eq brightness adjustment", String(DEFAULT_SUBJECT_MASK_GRADE_OPTIONS.brightness))
+    .option("--contrast <n>", "FFmpeg eq contrast multiplier", String(DEFAULT_SUBJECT_MASK_GRADE_OPTIONS.contrast))
+    .option("--gamma <n>", "FFmpeg eq gamma multiplier", String(DEFAULT_SUBJECT_MASK_GRADE_OPTIONS.gamma))
+    .option("--gamma-weight <n>", "FFmpeg eq gamma weight", String(DEFAULT_SUBJECT_MASK_GRADE_OPTIONS.gammaWeight))
+    .option("--saturation <n>", "FFmpeg eq saturation multiplier", String(DEFAULT_SUBJECT_MASK_GRADE_OPTIONS.saturation));
+}
+
+addGradeOptions(
+  program
+    .command("grade-preview")
+    .argument("<project>", "Project directory")
+    .option("--target <path>", "Media path to preview-grade, relative to project", "renders/rough-cut.mp4")
+    .option("--out-dir <path>", "Preview frame output directory, relative to project", "review/color-grade")
+    .option("--frames <count>", "Number of preview frames to write", "3")
+    .description("Write preview frames for a feathered subject-mask shadow lift."),
+).action(async (project: string, options: GradeCliOptions) => {
+  const plan = await previewSubjectMaskGrade({
+    projectDir: project,
+    targetPath: options.target,
+    outputDir: options.outDir ?? "review/color-grade",
+    count: Math.max(1, Number(options.frames ?? "3")),
+    options: gradeOptionsFromCli(options),
+  });
+  await writeJson(colorGradePlanPath(project), plan);
+  console.log(`wrote ${plan.previewFrames.length} grade preview frames`);
+  for (const frame of plan.previewFrames) console.log(`preview ${resolve(project, frame)}`);
+  console.log(`plan ${colorGradePlanPath(project)}`);
+});
+
+addGradeOptions(
+  program
+    .command("grade-apply")
+    .argument("<project>", "Project directory")
+    .option("--target <path>", "Media path to grade, relative to project", "renders/rough-cut.mp4")
+    .option("--out <path>", "Graded render output path, relative to project", "renders/graded.mp4")
+    .description("Apply a feathered subject-mask shadow lift to a render."),
+).action(async (project: string, options: GradeCliOptions) => {
+  const output = options.out ?? "renders/graded.mp4";
+  const plan = await applySubjectMaskGrade({
+    projectDir: project,
+    targetPath: options.target,
+    outputPath: output,
+    options: gradeOptionsFromCli(options),
+  });
+  await writeJson(colorGradePlanPath(project), plan);
+  console.log(`rendered ${resolve(project, output)}`);
+  console.log(`plan ${colorGradePlanPath(project)}`);
+});
 
 program
   .command("caption")

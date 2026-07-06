@@ -20,6 +20,8 @@ raw video + transcript
   -> review/content-inventory.md
   -> edit-plan.json
   -> renders/rough-cut.mp4
+  -> plans/short-form-pacing.json
+  -> plans/color-grade.json
   -> captions/captions.ass
   -> renders/captioned.mp4
   -> renders/verify-report.json
@@ -87,11 +89,18 @@ bun dist/cli/index.js content-package ./my-cut \
 
 This writes `review/content-inventory.md`, `analysis/story-candidates.json`, `analysis/story-selection.md`, and a selected `edit-plan.json`. The recipe is generic; the `hanif` profile contains the current themes, transcript cleanup, scoring defaults, and post-copy scaffolds for Hanif's videos.
 
-Create and render a rough cut:
+Create a short-form-paced rough cut:
 
 ```sh
-bun dist/cli/index.js plan ./my-cut
+bun dist/cli/index.js shortform-pacing ./my-cut
 bun dist/cli/index.js render ./my-cut
+```
+
+Preview and apply a subject-mask shadow lift when the speaker is underexposed:
+
+```sh
+bun dist/cli/index.js grade-preview ./my-cut --target renders/rough-cut.mp4
+bun dist/cli/index.js grade-apply ./my-cut --target renders/rough-cut.mp4 --out renders/graded.mp4
 ```
 
 Find moments, caption, verify, and package:
@@ -100,8 +109,8 @@ Find moments, caption, verify, and package:
 bun dist/cli/index.js find-moments ./my-cut \
   --objective "Find one complete Instagram-ready moment" \
   --target-seconds 30
-bun dist/cli/index.js caption ./my-cut
-bun dist/cli/index.js verify ./my-cut
+bun dist/cli/index.js caption ./my-cut --target renders/graded.mp4 --out renders/captioned.mp4
+bun dist/cli/index.js verify ./my-cut --target renders/captioned.mp4
 bun dist/cli/index.js social-package ./my-cut --platform instagram
 bun dist/cli/index.js export-otio ./my-cut
 ```
@@ -129,6 +138,9 @@ agent-cutroom plan <project>
 agent-cutroom render <project>
 agent-cutroom find-moments <project>
 agent-cutroom content-package <project> [--recipe talking-head-story] [--profile hanif]
+agent-cutroom shortform-pacing <project>
+agent-cutroom grade-preview <project>
+agent-cutroom grade-apply <project>
 agent-cutroom caption <project>
 agent-cutroom verify <project>
 agent-cutroom social-package <project>
@@ -220,6 +232,10 @@ agent-cutroom content-package <project> \
 ```
 
 The built-in `talking-head-story` recipe owns deterministic candidate generation and edit-plan writing. The `hanif` content profile owns the themes, audience, transcript corrections, score defaults, and social post draft templates. See [docs/content-package.md](docs/content-package.md) for profile shape, workflow, and quality gates.
+
+## Short-Form Polish
+
+`agent-cutroom shortform-pacing` tightens the selected edit plan using transcript word timings, writing `plans/short-form-pacing.json` and updating `edit-plan.json` by default. `agent-cutroom grade-preview` and `agent-cutroom grade-apply` use a feathered FFmpeg subject mask to lift shadows on the speaker without globally blowing out the frame. See [docs/short-form-polish.md](docs/short-form-polish.md).
 
 ## MCP Server
 

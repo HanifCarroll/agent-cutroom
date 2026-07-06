@@ -148,6 +148,69 @@ export const EditPlanSchema = z.object({
 
 export type EditPlan = z.infer<typeof EditPlanSchema>;
 
+export const ShortFormPacingCutSchema = z.object({
+  id: z.string(),
+  sourceSegmentId: z.string(),
+  sourceStartMs: MsSchema,
+  sourceEndMs: MsSchema,
+  removedMs: MsSchema,
+  keptPauseMs: MsSchema,
+  reason: z.string(),
+  precedingWord: z.string().nullable(),
+  followingWord: z.string().nullable(),
+});
+
+export type ShortFormPacingCut = z.infer<typeof ShortFormPacingCutSchema>;
+
+export const ShortFormPacingPlanSchema = z.object({
+  version: z.literal(CUTROOM_VERSION),
+  createdAt: z.string(),
+  sourceEditPlanPath: z.string(),
+  outputEditPlanPath: z.string(),
+  beforeDurationMs: MsSchema,
+  afterDurationMs: MsSchema,
+  removedMs: MsSchema,
+  options: z.object({
+    minPauseMs: MsSchema,
+    keepPauseMs: MsSchema,
+    leadInMs: MsSchema,
+    tailOutMs: MsSchema,
+    minCutMs: MsSchema,
+    minSegmentMs: MsSchema,
+  }),
+  cuts: z.array(ShortFormPacingCutSchema),
+  warnings: z.array(z.string()).default([]),
+});
+
+export type ShortFormPacingPlan = z.infer<typeof ShortFormPacingPlanSchema>;
+
+export const ColorGradePlanSchema = z.object({
+  version: z.literal(CUTROOM_VERSION),
+  createdAt: z.string(),
+  method: z.literal("subject-mask-shadow-lift"),
+  targetPath: z.string(),
+  outputPath: z.string().nullable(),
+  previewFrames: z.array(z.string()).default([]),
+  mask: z.object({
+    centerXPct: z.number().min(0).max(1),
+    centerYPct: z.number().min(0).max(1),
+    radiusXPct: z.number().positive(),
+    radiusYPct: z.number().positive(),
+    featherPx: z.number().nonnegative(),
+  }),
+  grade: z.object({
+    brightness: z.number(),
+    contrast: z.number().positive(),
+    gamma: z.number().positive(),
+    gammaWeight: z.number().min(0).max(1),
+    saturation: z.number().positive(),
+  }),
+  filterGraph: z.string(),
+  warnings: z.array(z.string()).default([]),
+});
+
+export type ColorGradePlan = z.infer<typeof ColorGradePlanSchema>;
+
 export const HighlightCandidateSchema = z.object({
   id: z.string(),
   sourceStartMs: MsSchema,
