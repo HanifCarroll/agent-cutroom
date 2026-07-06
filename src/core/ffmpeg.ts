@@ -112,6 +112,7 @@ export async function detectSilences({
     "-nostdin",
     "-i",
     sourcePath,
+    "-vn",
     "-af",
     `silencedetect=noise=${noiseDb}:d=${minDurationSeconds}`,
     "-f",

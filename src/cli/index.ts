@@ -5,12 +5,15 @@ import { join, resolve } from "node:path";
 import { commandExists, runCommand } from "../core/process.js";
 import {
   captionPlanPath,
+  contentInventoryPath,
   createProject,
   editPlanPath,
   highlightCandidatesPath,
   readManifest,
   readTimeline,
   socialPackagePath,
+  storyCandidatesPath,
+  storySelectionPath,
   writeTimeline,
 } from "../core/project.js";
 import { loadTranscript } from "../core/transcript.js";
@@ -44,6 +47,12 @@ import { findMoments } from "../core/find-moments.js";
 import { verifyRender } from "../core/verify.js";
 import { createSocialPackage } from "../core/social-package.js";
 import { createOtioTimeline } from "../core/otio.js";
+import {
+  loadContentProfile,
+  loadContentRecipe,
+  readStoryCandidates,
+  writeContentPackage,
+} from "../core/content-package/index.js";
 
 const program = new Command();
 
@@ -92,13 +101,15 @@ program
   .requiredOption("-o, --out <dir>", "Project output directory")
   .option("-t, --transcript <path>", "Timestamped transcript JSON")
   .option("--title <title>", "Project title")
+  .option("--link-source", "Symlink source media instead of copying it")
   .description("Create an Agent Cutroom project folder.")
-  .action(async (video: string, options: { out: string; transcript?: string; title?: string }) => {
+  .action(async (video: string, options: { out: string; transcript?: string; title?: string; linkSource?: boolean }) => {
     const manifest = await createProject({
       videoPath: video,
       transcriptPath: options.transcript,
       outDir: options.out,
       title: options.title,
+      linkSource: Boolean(options.linkSource),
     });
     console.log(`created ${resolve(options.out)}`);
     console.log(`source ${manifest.sourcePath}`);
@@ -418,6 +429,92 @@ program
     },
   );
 
+interface ContentPackageCliOptions {
+  recipe: string;
+  profile: string;
+  objective?: string;
+  targetSeconds: string;
+  minSeconds: string;
+  maxSeconds: string;
+  max: string;
+  select?: string;
+  leadPaddingMs: string;
+  tailPaddingMs: string;
+}
+
+async function runContentPackageCommand(project: string, options: ContentPackageCliOptions): Promise<void> {
+  const manifest = await readManifest(project);
+  const timeline = await readTimeline(project);
+  const recipe = loadContentRecipe(options.recipe);
+  const profile = await loadContentProfile(options.profile);
+  const result = await writeContentPackage({
+    projectDir: project,
+    timeline,
+    sourcePath: manifest.sourcePath,
+    title: manifest.title,
+    recipe,
+    profile,
+    objective: options.objective,
+    targetDurationMs: Math.max(1000, Math.round(Number(options.targetSeconds) * 1000)),
+    minDurationMs: Math.max(1000, Math.round(Number(options.minSeconds) * 1000)),
+    maxDurationMs: Math.max(1000, Math.round(Number(options.maxSeconds) * 1000)),
+    maxCandidates: Math.max(1, Number(options.max)),
+    selectedId: options.select,
+    leadPaddingMs: Math.max(0, Number(options.leadPaddingMs)),
+    tailPaddingMs: Math.max(0, Number(options.tailPaddingMs)),
+  });
+  console.log(`wrote ${result.storyCandidates.candidates.length} story candidates`);
+  console.log(`inventory ${contentInventoryPath(project)}`);
+  console.log(`candidates ${storyCandidatesPath(project)}`);
+  console.log(`selection ${storySelectionPath(project)}`);
+  if (result.editPlan) console.log(`edit plan ${editPlanPath(project)}`);
+  if (result.selectedCandidate) {
+    console.log(
+      `selected ${result.selectedCandidate.id} (${result.selectedCandidate.legacyRankId}): ${result.selectedCandidate.timestamp} score=${result.selectedCandidate.score.toFixed(3)} ${result.selectedCandidate.title}`,
+    );
+  }
+  for (const warning of result.storyCandidates.warnings) console.log(`warning: ${warning}`);
+}
+
+program
+  .command("content-package")
+  .argument("<project>", "Project directory")
+  .option("--recipe <id>", "Content package recipe. Built-in: talking-head-story", "talking-head-story")
+  .option("--profile <id-or-path>", "Content profile for themes, audience, scoring defaults, and post copy", "hanif")
+  .option("--objective <text>", "Selection objective")
+  .option("--target-seconds <seconds>", "Target selected clip duration in seconds", "75")
+  .option("--min-seconds <seconds>", "Minimum candidate duration in seconds", "35")
+  .option("--max-seconds <seconds>", "Maximum candidate duration in seconds", "125")
+  .option("--max <count>", "Maximum story candidates to keep", "8")
+  .option("--select <id>", "Force a story candidate id when rewriting the edit plan")
+  .option("--lead-padding-ms <ms>", "Source padding before selected story", "800")
+  .option("--tail-padding-ms <ms>", "Source padding after selected story", "1200")
+  .description("Build a source-backed content package from a recipe and profile.")
+  .action(runContentPackageCommand);
+
+program
+  .command("hanif-content-package")
+  .argument("<project>", "Project directory")
+  .option("--objective <text>", "Selection objective")
+  .option("--target-seconds <seconds>", "Target selected clip duration in seconds", "75")
+  .option("--min-seconds <seconds>", "Minimum candidate duration in seconds", "35")
+  .option("--max-seconds <seconds>", "Maximum candidate duration in seconds", "125")
+  .option("--max <count>", "Maximum story candidates to keep", "8")
+  .option("--select <id>", "Force a specific story candidate id when rewriting the edit plan")
+  .option("--lead-padding-ms <ms>", "Source padding before selected story", "800")
+  .option("--tail-padding-ms <ms>", "Source padding after selected story", "1200")
+  .description("Deprecated alias for `content-package --recipe talking-head-story --profile hanif`.")
+  .action(async (project: string, options: Omit<ContentPackageCliOptions, "recipe" | "profile">) => {
+    console.error(
+      "warning: `hanif-content-package` is deprecated; use `content-package --recipe talking-head-story --profile hanif`.",
+    );
+    await runContentPackageCommand(project, {
+      ...options,
+      recipe: "talking-head-story",
+      profile: "hanif",
+    });
+  });
+
 program
   .command("caption")
   .argument("<project>", "Project directory")
@@ -532,6 +629,7 @@ program
       const candidates = await readJson(highlightCandidatesPath(project), HighlightCandidatesSchema).catch(
         () => null,
       );
+      const storyCandidates = await readStoryCandidates(project);
       const socialPackage = await createSocialPackage({
         projectDir: project,
         timeline,
@@ -539,6 +637,7 @@ program
         renderPath,
         candidateId: options.candidate,
         candidates,
+        storyCandidates,
         title: options.title,
       });
       await writeJson(socialPackagePath(project), socialPackage);

@@ -16,6 +16,8 @@ raw video + transcript
   -> review/review-pack.md
   -> agent observations
   -> analysis/highlight-candidates.json
+  -> analysis/story-candidates.json
+  -> review/content-inventory.md
   -> edit-plan.json
   -> renders/rough-cut.mp4
   -> captions/captions.ass
@@ -74,6 +76,17 @@ bun dist/cli/index.js observe ./my-cut \
   --note "Good opening section."
 ```
 
+For source-backed talking-head packaging, build a content package from a recipe and profile:
+
+```sh
+bun dist/cli/index.js content-package ./my-cut \
+  --recipe talking-head-story \
+  --profile hanif \
+  --target-seconds 75
+```
+
+This writes `review/content-inventory.md`, `analysis/story-candidates.json`, `analysis/story-selection.md`, and a selected `edit-plan.json`. The recipe is generic; the `hanif` profile contains the current themes, transcript cleanup, scoring defaults, and post-copy scaffolds for Hanif's videos. Existing scripts can still call `hanif-content-package`, which is kept as a deprecated alias for the same recipe/profile pair.
+
 Create and render a rough cut:
 
 ```sh
@@ -103,7 +116,7 @@ bun dist/cli/index.js hyperframes-brief ./my-cut
 
 ```txt
 agent-cutroom doctor
-agent-cutroom init <video> --out <dir> [--transcript <path>] [--title <title>]
+agent-cutroom init <video> --out <dir> [--transcript <path>] [--title <title>] [--link-source]
 agent-cutroom probe <project>
 agent-cutroom transcribe <project> [--backend mlx-whisper] [--model large-v3] [--vault-note <path>]
 agent-cutroom transcript <project>
@@ -115,6 +128,7 @@ agent-cutroom observe <project> --window <id> --summary <text>
 agent-cutroom plan <project>
 agent-cutroom render <project>
 agent-cutroom find-moments <project>
+agent-cutroom content-package <project> [--recipe talking-head-story] [--profile hanif]
 agent-cutroom caption <project>
 agent-cutroom verify <project>
 agent-cutroom social-package <project>
@@ -193,7 +207,19 @@ HyperFrames fits after the rough cut, when the agent wants a polished compositio
 
 ## Artifact Contract
 
-See [docs/artifact-contract.md](docs/artifact-contract.md) for the project file contract, including transcript words, highlight candidates, caption plans, social packages, verification reports, and OTIO exports.
+See [docs/artifact-contract.md](docs/artifact-contract.md) for the project file contract, including transcript words, highlight candidates, story candidates, caption plans, social packages, verification reports, and OTIO exports.
+
+## Content Packages
+
+`agent-cutroom content-package` turns prepared transcript/windows/frame evidence into a content inventory, ranked story candidates, one selected story, and the selected edit plan.
+
+```sh
+agent-cutroom content-package <project> \
+  --recipe talking-head-story \
+  --profile hanif
+```
+
+The built-in `talking-head-story` recipe owns deterministic candidate generation and edit-plan writing. The `hanif` content profile owns the themes, audience, transcript corrections, score defaults, and social post draft templates. See [docs/content-package.md](docs/content-package.md) for profile shape, workflow, and quality gates.
 
 ## MCP Server
 
@@ -244,4 +270,4 @@ bun run build
 
 ## Status
 
-This is an early public prototype. The stable contract is the file-based workflow: `cutroom.json`, `timeline.json`, `review/review-pack.md`, `analysis/highlight-candidates.json`, `edit-plan.json`, `plans/caption-plan.json`, `plans/social-package.json`, `renders/verify-report.json`, `exports/edit.otio`, and rendered outputs.
+This is an early public prototype. The stable contract is the file-based workflow: `cutroom.json`, `timeline.json`, `review/review-pack.md`, `review/content-inventory.md`, `analysis/highlight-candidates.json`, `analysis/story-candidates.json`, `analysis/story-selection.md`, `edit-plan.json`, `plans/caption-plan.json`, `plans/social-package.json`, `renders/verify-report.json`, `exports/edit.otio`, and rendered outputs.

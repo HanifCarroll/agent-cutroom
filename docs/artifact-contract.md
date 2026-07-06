@@ -16,10 +16,13 @@ project/
     transcript.txt
   analysis/
     highlight-candidates.json
+    story-candidates.json
+    story-selection.md
   frames/
   contact-sheets/
   review/
     review-pack.md
+    content-inventory.md
   captions/
     captions.ass
   plans/
@@ -42,7 +45,7 @@ project/
 ## Source Artifacts
 
 - `cutroom.json`: project manifest, source path, transcript path, edit-plan path, render directory, title, and creation time.
-- `source/source.*`: copied source media. This is the source of truth for render operations.
+- `source/source.*`: copied or symlinked source media. This is the source of truth for render operations.
 - `transcript/*`: copied or generated transcript artifacts.
 - `timeline.json`: canonical timeline state.
 
@@ -62,6 +65,9 @@ project/
 
 - `review/review-pack.md`: agent-facing Markdown review surface with transcript windows and frame references.
 - `analysis/highlight-candidates.json`: candidate clip windows with source timestamps, transcript text, reasons, evidence IDs, warnings, and scores.
+- `review/content-inventory.md`: recipe/profile content inventory with selected story, clip candidates, writing/vault opportunities, weak sections, and repeatable process.
+- `analysis/story-candidates.json`: source-backed story candidates produced by `agent-cutroom content-package`, including recipe/profile metadata, stable source-range IDs, rank aliases, source evidence, score reasons, suggested artifacts, and warnings.
+- `analysis/story-selection.md`: selected story summary with hook, point, evidence, warnings, and the selected edit-plan segment.
 - `edit-plan.json`: keep segments. Each segment has source timing, reason, source windows, evidence, confidence, and warnings.
 - `plans/caption-plan.json`: subtitle format, target media, style, events, warnings, and optional burned output path.
 - `plans/social-package.json`: platform, style pack, render path, cover frame, title options, hashtags, source timestamps, and warnings.
@@ -84,4 +90,5 @@ project/
 - Active-word captions must come from `segments[].words[]`.
 - Visual judgments must be written as observations, not only kept in chat.
 - Generated B-roll, title cards, captions, and social copy should point back to source timestamps or candidate IDs.
+- Content package profiles may tune themes and post-copy scaffolds, but selected moments must still come from timestamped transcript/project evidence.
 - Rendered files should have a verification report before release.

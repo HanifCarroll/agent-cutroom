@@ -1,6 +1,6 @@
 ---
 name: agent-cutroom
-description: Cutroom workflow for agent-driven video review and editing with Agent Cutroom. Use when the user wants an agent to inspect footage, import or generate transcripts, review frames/contact sheets, record observations, plan or render rough cuts, generate HyperFrames briefs, or create captioned social-ready video.
+description: Cutroom workflow for agent-driven video review and editing with Agent Cutroom. Use when the user wants an agent to inspect footage, import or generate transcripts, review frames/contact sheets, record observations, plan or render rough cuts, build source-backed content packages, generate HyperFrames briefs, or create captioned social-ready video.
 ---
 
 # Agent Cutroom
@@ -42,6 +42,12 @@ With a timestamped transcript:
 cutroom init "$VIDEO" --transcript "$TRANSCRIPT_JSON" --out "$PROJECT" --title "$TITLE"
 ```
 
+For very large source media, add `--link-source` to symlink the source instead of copying it:
+
+```sh
+cutroom init "$VIDEO" --transcript "$TRANSCRIPT_JSON" --out "$PROJECT" --title "$TITLE" --link-source
+```
+
 Without a transcript:
 
 ```sh
@@ -75,7 +81,20 @@ cutroom observe "$PROJECT" \
 
 Use `--editing-use keep|tighten|cut|broll` and `--broll none|low|medium|high`. Finish this step when every editorial decision the plan will rely on is recorded in `timeline.json`.
 
-5. Find candidate moments.
+5. Build a source-backed content package when the recording should become clips, writing, notes, or tasks.
+
+```sh
+cutroom content-package "$PROJECT" \
+  --recipe talking-head-story \
+  --profile hanif \
+  --target-seconds 75
+```
+
+Use the `hanif` profile for Hanif's tripod videos, walk-style videos, raw thinking recordings, consulting/content/software videos, and videos meant to become writing, clips, vault notes, or tasks. The command writes `review/content-inventory.md`, `analysis/story-candidates.json`, `analysis/story-selection.md`, and `edit-plan.json`.
+
+Inspect the inventory and selection before rendering. Use `hanif-content-package` only as a compatibility alias for old runs.
+
+6. Find candidate moments.
 
 ```sh
 cutroom find-moments "$PROJECT" --objective "$OBJECTIVE" --target-seconds "$TARGET_SECONDS"
@@ -83,7 +102,7 @@ cutroom find-moments "$PROJECT" --objective "$OBJECTIVE" --target-seconds "$TARG
 
 Inspect `analysis/highlight-candidates.json` before selecting a clip or trusting a recommendation.
 
-6. Plan and render.
+7. Plan and render.
 
 ```sh
 cutroom plan "$PROJECT"
@@ -92,7 +111,7 @@ cutroom render "$PROJECT"
 
 Inspect `edit-plan.json` before trusting the render. Verify the output with `ffprobe` and a visual preview. Finish this step when `renders/rough-cut.mp4` exists and the rendered cut matches the recorded observations.
 
-7. Caption, verify, package, and export as needed.
+8. Caption, verify, package, and export as needed.
 
 ```sh
 cutroom caption "$PROJECT"
@@ -103,7 +122,7 @@ cutroom export-otio "$PROJECT"
 
 Use `caption` only when real word timings exist. It writes `plans/caption-plan.json`, `captions/captions.ass`, and, by default, `renders/captioned.mp4`.
 
-8. Polish after the rough cut is real.
+9. Polish after the rough cut is real.
 
 ```sh
 cutroom hyperframes-brief "$PROJECT"
@@ -116,6 +135,7 @@ Use `hyperframes/brief.md` as context for a later polish pass with captions, tit
 Use the focused skills when available:
 
 - `cutroom-review`
+- `cutroom-story-selector`
 - `cutroom-rough-cut`
 - `cutroom-captions`
 - `cutroom-social-package`

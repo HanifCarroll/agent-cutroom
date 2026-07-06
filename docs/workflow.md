@@ -33,7 +33,27 @@ agent-cutroom observe cutroom-project \
   --broll high
 ```
 
-## 4. Plan And Render
+## 4. Build A Content Package
+
+For talking-head source material that should become clips, writing, vault notes, or tasks, run a recipe/profile content package pass:
+
+```sh
+agent-cutroom content-package cutroom-project \
+  --recipe talking-head-story \
+  --profile hanif \
+  --target-seconds 75
+```
+
+This writes:
+
+- `review/content-inventory.md`
+- `analysis/story-candidates.json`
+- `analysis/story-selection.md`
+- `edit-plan.json`
+
+The recipe is generic. The profile supplies the content themes, audience, transcript cleanup, defaults, and post-copy templates. Inspect the inventory and selected story before rendering.
+
+## 5. Plan And Render
 
 ```sh
 agent-cutroom plan cutroom-project
@@ -42,7 +62,9 @@ agent-cutroom render cutroom-project
 
 `plan` removes long silence ranges and windows marked as `cut`. `render` creates `renders/rough-cut.mp4`.
 
-## 5. Find Candidate Moments
+If `content-package` already wrote the selected `edit-plan.json`, run `render` directly after reviewing the selection.
+
+## 6. Find Candidate Moments
 
 ```sh
 agent-cutroom find-moments cutroom-project \
@@ -52,7 +74,7 @@ agent-cutroom find-moments cutroom-project \
 
 This writes `analysis/highlight-candidates.json` with candidate windows, reasons, evidence, warnings, and source timestamps.
 
-## 6. Caption And Verify
+## 7. Caption And Verify
 
 ```sh
 agent-cutroom caption cutroom-project
@@ -63,7 +85,7 @@ agent-cutroom verify cutroom-project
 
 `verify` probes, decodes, and extracts preview frames for the render, then writes `renders/verify-report.json`.
 
-## 7. Package For Social
+## 8. Package For Social
 
 ```sh
 agent-cutroom social-package cutroom-project --platform instagram
@@ -71,7 +93,7 @@ agent-cutroom social-package cutroom-project --platform instagram
 
 This writes `plans/social-package.json`, `release/cover-frame.jpg`, and `release/post-copy.md`.
 
-## 8. Export OTIO
+## 9. Export OTIO
 
 ```sh
 agent-cutroom export-otio cutroom-project
@@ -79,7 +101,7 @@ agent-cutroom export-otio cutroom-project
 
 This writes `exports/edit.otio` from the current `edit-plan.json`.
 
-## 9. Polish With HyperFrames
+## 10. Polish With HyperFrames
 
 ```sh
 agent-cutroom hyperframes-brief cutroom-project

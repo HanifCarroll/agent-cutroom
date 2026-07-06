@@ -1,4 +1,4 @@
-import { copyFile, stat } from "node:fs/promises";
+import { copyFile, stat, symlink } from "node:fs/promises";
 import { basename, extname, join, relative, resolve } from "node:path";
 import {
   CUTROOM_VERSION,
@@ -14,6 +14,9 @@ export const MANIFEST_FILE = "cutroom.json";
 export const TIMELINE_FILE = "timeline.json";
 export const EDIT_PLAN_FILE = "edit-plan.json";
 export const HIGHLIGHT_CANDIDATES_FILE = "analysis/highlight-candidates.json";
+export const STORY_CANDIDATES_FILE = "analysis/story-candidates.json";
+export const STORY_SELECTION_FILE = "analysis/story-selection.md";
+export const CONTENT_INVENTORY_FILE = "review/content-inventory.md";
 export const CAPTION_PLAN_FILE = "plans/caption-plan.json";
 export const SOCIAL_PACKAGE_FILE = "plans/social-package.json";
 export const VERIFY_REPORT_FILE = "renders/verify-report.json";
@@ -37,6 +40,18 @@ export function editPlanPath(projectDir: string): string {
 
 export function highlightCandidatesPath(projectDir: string): string {
   return join(resolveProjectDir(projectDir), HIGHLIGHT_CANDIDATES_FILE);
+}
+
+export function storyCandidatesPath(projectDir: string): string {
+  return join(resolveProjectDir(projectDir), STORY_CANDIDATES_FILE);
+}
+
+export function storySelectionPath(projectDir: string): string {
+  return join(resolveProjectDir(projectDir), STORY_SELECTION_FILE);
+}
+
+export function contentInventoryPath(projectDir: string): string {
+  return join(resolveProjectDir(projectDir), CONTENT_INVENTORY_FILE);
 }
 
 export function captionPlanPath(projectDir: string): string {
@@ -82,11 +97,13 @@ export async function createProject({
   transcriptPath,
   outDir,
   title,
+  linkSource = false,
 }: {
   videoPath: string;
   transcriptPath?: string;
   outDir: string;
   title?: string;
+  linkSource?: boolean;
 }): Promise<CutroomManifest> {
   const projectDir = resolveProjectDir(outDir);
   const sourceDir = join(projectDir, "source");
@@ -105,7 +122,11 @@ export async function createProject({
   const videoAbs = resolve(videoPath);
   const extension = extname(videoAbs) || ".mp4";
   const sourcePath = join(sourceDir, `source${extension}`);
-  await copyFile(videoAbs, sourcePath);
+  if (linkSource) {
+    await symlink(videoAbs, sourcePath);
+  } else {
+    await copyFile(videoAbs, sourcePath);
+  }
   const sourceStats = await stat(sourcePath);
   if (!sourceStats.isFile()) {
     throw new Error(`Source video was not copied to ${sourcePath}`);

@@ -17,7 +17,7 @@ bun dist/mcp/server.js
 
 ## Tools
 
-The server exposes 11 always-visible tools:
+The server exposes 12 always-visible tools:
 
 - `doctor`
 - `init_project`
@@ -25,6 +25,7 @@ The server exposes 11 always-visible tools:
 - `record_observation`
 - `plan_render`
 - `find_moments`
+- `content_package`
 - `caption`
 - `verify`
 - `social_package`
@@ -41,6 +42,9 @@ Tools return `cutroom://artifact/{token}` resource links for project artifacts s
 - `timeline.json`
 - `review/review-pack.md`
 - `analysis/highlight-candidates.json`
+- `analysis/story-candidates.json`
+- `analysis/story-selection.md`
+- `review/content-inventory.md`
 - `edit-plan.json`
 - `plans/caption-plan.json`
 - `renders/verify-report.json`
@@ -53,7 +57,7 @@ The resource reader only serves paths inside the encoded project directory.
 ## Prompts
 
 - `review-footage`: prepare and inspect footage, then record observations.
-- `package-for-social`: find candidate moments, caption, verify, and package a social render.
+- `package-for-social`: find or select candidate moments, caption, verify, and package a social render.
 
 ## Verification
 

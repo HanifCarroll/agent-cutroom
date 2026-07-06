@@ -8,10 +8,12 @@ import {
   type HighlightCandidates,
   type Platform,
   type SocialPackage,
+  type HighlightCandidate,
   type Timeline,
 } from "./schema.js";
 import { getPlatformStylePack } from "./style-packs.js";
 import { formatTimestamp } from "./time.js";
+import type { StoryCandidate, StoryCandidates } from "./content-package/index.js";
 
 export interface CreateSocialPackageOptions {
   projectDir: string;
@@ -20,14 +22,50 @@ export interface CreateSocialPackageOptions {
   renderPath: string;
   candidateId?: string | null;
   candidates?: HighlightCandidates | null;
+  storyCandidates?: StoryCandidates | null;
   title?: string | null;
 }
 
-function firstTranscriptText(timeline: Timeline, candidates: HighlightCandidates | null, candidateId?: string | null): string {
-  const candidate = candidateId
-    ? candidates?.candidates.find((item) => item.id === candidateId)
-    : candidates?.candidates[0];
-  if (candidate?.transcriptText) return candidate.transcriptText;
+function selectedHighlightCandidate(candidates: HighlightCandidates | null, candidateId?: string | null) {
+  if (!candidates) return null;
+  return candidateId
+    ? candidates.candidates.find((item) => item.id === candidateId) ?? null
+    : candidates.candidates[0] ?? null;
+}
+
+function selectedStoryCandidate(
+  storyCandidates: StoryCandidates | null,
+  candidateId?: string | null,
+): StoryCandidate | null {
+  if (!storyCandidates) return null;
+  if (candidateId) {
+    return storyCandidates.candidates.find((item) => item.id === candidateId || item.legacyRankId === candidateId) ?? null;
+  }
+  if (storyCandidates.selectedCandidateId) {
+    return storyCandidates.candidates.find((item) => item.id === storyCandidates.selectedCandidateId) ?? null;
+  }
+  return storyCandidates.candidates[0] ?? null;
+}
+
+type SelectedSourceCandidate =
+  | { kind: "story"; candidate: StoryCandidate }
+  | { kind: "highlight"; candidate: HighlightCandidate }
+  | { kind: "none"; candidate: null };
+
+function selectedSourceCandidate(options: {
+  candidates: HighlightCandidates | null;
+  storyCandidates: StoryCandidates | null;
+  candidateId?: string | null;
+}): SelectedSourceCandidate {
+  const storyCandidate = selectedStoryCandidate(options.storyCandidates, options.candidateId);
+  if (storyCandidate) return { kind: "story", candidate: storyCandidate };
+  const highlightCandidate = selectedHighlightCandidate(options.candidates, options.candidateId);
+  if (highlightCandidate) return { kind: "highlight", candidate: highlightCandidate };
+  return { kind: "none", candidate: null };
+}
+
+function firstTranscriptText(timeline: Timeline, selected: SelectedSourceCandidate): string {
+  if (selected.candidate?.transcriptText) return selected.candidate.transcriptText;
   return timeline.transcriptSegments
     .slice(0, 2)
     .map((segment) => segment.text)
@@ -42,6 +80,12 @@ function titleFromText(text: string): string {
   return words.join(" ").replace(/[.!?,:;]+$/, "");
 }
 
+function shortText(text: string, maxWords: number): string {
+  const words = text.replace(/\s+/g, " ").trim().split(/\s+/).filter(Boolean);
+  if (words.length <= maxWords) return words.join(" ");
+  return `${words.slice(0, maxWords).join(" ")}...`;
+}
+
 function hashtagsForPlatform(platform: Platform): string[] {
   switch (platform) {
     case "instagram":
@@ -53,6 +97,58 @@ function hashtagsForPlatform(platform: Platform): string[] {
     case "linkedin":
       return ["#video", "#content", "#workflow"];
   }
+}
+
+function postCopyLines({
+  platform,
+  title,
+  sourceText,
+  sourceTimestamps,
+  storyCandidate,
+}: {
+  platform: Platform;
+  title: string;
+  sourceText: string;
+  sourceTimestamps: string[];
+  storyCandidate: StoryCandidate | null;
+}): string[] {
+  if (storyCandidate) {
+    return [
+      `# ${storyCandidate.title}`,
+      "",
+      "## Clip Angle",
+      "",
+      storyCandidate.point,
+      "",
+      "## Post Draft",
+      "",
+      storyCandidate.socialPostDraft ?? storyCandidate.point,
+      "",
+      "## Source",
+      "",
+      `- Candidate: ${storyCandidate.id}`,
+      `- Rank alias: ${storyCandidate.legacyRankId}`,
+      `- Theme: ${storyCandidate.themeLabel}`,
+      `- Timestamp: ${sourceTimestamps.join(", ") || "not selected"}`,
+      "",
+      "## Transcript Excerpt",
+      "",
+      `> ${shortText(sourceText, 90)}`,
+      "",
+      hashtagsForPlatform(platform).join(" "),
+      "",
+    ];
+  }
+  return [
+    `# ${title}`,
+    "",
+    sourceText || "Post copy placeholder. Review the source transcript before publishing.",
+    "",
+    `Source: ${sourceTimestamps.join(", ") || "not selected"}`,
+    "",
+    hashtagsForPlatform(platform).join(" "),
+    "",
+  ];
 }
 
 async function writeCoverFrame(projectDir: string, renderPath: string): Promise<string | null> {
@@ -90,30 +186,31 @@ async function writeCoverFrame(projectDir: string, renderPath: string): Promise<
 export async function createSocialPackage(options: CreateSocialPackageOptions): Promise<SocialPackage> {
   const stylePack = getPlatformStylePack(options.platform);
   const media = await ffprobeMedia(options.projectDir, options.renderPath).catch(() => null);
-  const sourceText = firstTranscriptText(options.timeline, options.candidates ?? null, options.candidateId);
-  const primaryTitle = options.title?.trim() || titleFromText(sourceText);
+  const selected = selectedSourceCandidate({
+    candidates: options.candidates ?? null,
+    storyCandidates: options.storyCandidates ?? null,
+    candidateId: options.candidateId,
+  });
+  const storyCandidate = selected.kind === "story" ? selected.candidate : null;
+  const sourceText = firstTranscriptText(options.timeline, selected);
+  const primaryTitle = options.title?.trim() || storyCandidate?.title || titleFromText(sourceText);
   const titleOptions = [
     primaryTitle,
+    storyCandidate?.point ? titleFromText(storyCandidate.point) : null,
     sourceText ? titleFromText(sourceText.split(/[.!?]/)[0] ?? sourceText) : primaryTitle,
-  ].filter((value, index, values) => value && values.indexOf(value) === index);
-  const candidate = options.candidateId
-    ? options.candidates?.candidates.find((item) => item.id === options.candidateId)
-    : options.candidates?.candidates[0];
+  ].filter((value, index, values): value is string => Boolean(value) && values.indexOf(value) === index);
   const coverFramePath = await writeCoverFrame(options.projectDir, options.renderPath);
-  const sourceTimestamps = candidate
-    ? [`${formatTimestamp(candidate.sourceStartMs)}-${formatTimestamp(candidate.sourceEndMs)}`]
+  const sourceTimestamps = selected.candidate
+    ? [`${formatTimestamp(selected.candidate.sourceStartMs)}-${formatTimestamp(selected.candidate.sourceEndMs)}`]
     : [];
   const postCopyPath = "release/post-copy.md";
-  const lines = [
-    `# ${primaryTitle}`,
-    "",
-    sourceText || "Post copy placeholder. Review the source transcript before publishing.",
-    "",
-    `Source: ${sourceTimestamps.join(", ") || "not selected"}`,
-    "",
-    hashtagsForPlatform(options.platform).join(" "),
-    "",
-  ];
+  const lines = postCopyLines({
+    platform: options.platform,
+    title: primaryTitle,
+    sourceText,
+    sourceTimestamps,
+    storyCandidate,
+  });
   await writeFile(resolve(options.projectDir, postCopyPath), lines.join("\n"));
 
   const warnings: string[] = [];
@@ -138,7 +235,7 @@ export async function createSocialPackage(options: CreateSocialPackageOptions): 
     postCopyPath,
     hashtags: hashtagsForPlatform(options.platform),
     stylePack,
-    sourceCandidateId: candidate?.id ?? null,
+    sourceCandidateId: selected.candidate?.id ?? null,
     sourceTimestamps,
     warnings,
   });

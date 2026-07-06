@@ -123,14 +123,16 @@ server.registerTool(
       out: z.string().describe("Project output directory."),
       transcript: z.string().optional().describe("Optional timestamped transcript JSON path."),
       title: z.string().optional().describe("Optional project title."),
+      linkSource: z.boolean().default(false).describe("Symlink source media instead of copying it."),
     },
     outputSchema: { status: z.string(), text: z.string(), resources: z.array(z.object({ uri: z.string(), name: z.string() })) },
     annotations: { readOnlyHint: false, openWorldHint: false },
   },
-  async ({ video, out, transcript, title }) => {
+  async ({ video, out, transcript, title, linkSource }) => {
     const args = ["init", video, "--out", out];
     if (transcript) args.push("--transcript", transcript);
     if (title) args.push("--title", title);
+    if (linkSource) args.push("--link-source");
     return toolResult(await callCli(args), [
       artifactLink(out, "cutroom.json", "Project manifest"),
       artifactLink(out, "timeline.json", "Project timeline"),
@@ -237,6 +239,59 @@ server.registerTool(
     if (max) args.push("--max", String(max));
     return toolResult(await callCli(args), [
       artifactLink(project, "analysis/highlight-candidates.json", "Candidate moments"),
+    ]);
+  },
+);
+
+server.registerTool(
+  "content_package",
+  {
+    title: "Create Content Package",
+    description:
+      "Use `content_package` after prepare to build a source-backed content inventory, story candidates, story selection, and selected edit plan from a recipe and content profile.",
+    inputSchema: {
+      project: ProjectArg,
+      recipe: z.string().default("talking-head-story"),
+      profile: z.string().default("hanif"),
+      objective: z.string().optional(),
+      targetSeconds: z.number().positive().optional(),
+      minSeconds: z.number().positive().optional(),
+      maxSeconds: z.number().positive().optional(),
+      max: z.number().int().positive().optional(),
+      select: z.string().optional(),
+      leadPaddingMs: z.number().int().nonnegative().optional(),
+      tailPaddingMs: z.number().int().nonnegative().optional(),
+    },
+    outputSchema: { status: z.string(), text: z.string(), resources: z.array(z.object({ uri: z.string(), name: z.string() })) },
+    annotations: { readOnlyHint: false, openWorldHint: false },
+  },
+  async ({
+    project,
+    recipe,
+    profile,
+    objective,
+    targetSeconds,
+    minSeconds,
+    maxSeconds,
+    max,
+    select,
+    leadPaddingMs,
+    tailPaddingMs,
+  }) => {
+    const args = ["content-package", project, "--recipe", recipe, "--profile", profile];
+    if (objective) args.push("--objective", objective);
+    if (targetSeconds) args.push("--target-seconds", String(targetSeconds));
+    if (minSeconds) args.push("--min-seconds", String(minSeconds));
+    if (maxSeconds) args.push("--max-seconds", String(maxSeconds));
+    if (max) args.push("--max", String(max));
+    if (select) args.push("--select", select);
+    if (leadPaddingMs !== undefined) args.push("--lead-padding-ms", String(leadPaddingMs));
+    if (tailPaddingMs !== undefined) args.push("--tail-padding-ms", String(tailPaddingMs));
+    return toolResult(await callCli(args), [
+      artifactLink(project, "review/content-inventory.md", "Content inventory"),
+      artifactLink(project, "analysis/story-candidates.json", "Story candidates"),
+      artifactLink(project, "analysis/story-selection.md", "Story selection"),
+      artifactLink(project, "edit-plan.json", "Selected edit plan"),
     ]);
   },
 );
@@ -388,7 +443,7 @@ server.registerPrompt(
         role: "user",
         content: {
           type: "text",
-          text: `Package Agent Cutroom project ${project} for ${platform}. Run find_moments, review the candidate artifact, render the selected cut, run caption with burned ASS captions, verify the render, then run social_package.`,
+          text: `Package Agent Cutroom project ${project} for ${platform}. Run find_moments or content_package, review the candidate artifact, render the selected cut, run caption with burned ASS captions, verify the render, then run social_package.`,
         },
       },
     ],
