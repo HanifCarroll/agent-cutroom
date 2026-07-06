@@ -90,9 +90,9 @@ cutroom content-package "$PROJECT" \
   --target-seconds 75
 ```
 
-Use the `hanif` profile for Hanif's tripod videos, walk-style videos, raw thinking recordings, consulting/content/software videos, and videos meant to become writing, clips, vault notes, or tasks. The command writes `review/content-inventory.md`, `analysis/story-candidates.json`, `analysis/clip-slate.json`, `review/clip-slate.md`, and `analysis/story-selection.md`.
+Use the `hanif` profile for Hanif's tripod videos, walk-style videos, raw thinking recordings, consulting/content/software videos, and videos meant to become writing, clips, vault notes, or tasks. The command writes `review/content-inventory.md`, `analysis/story-candidates.json`, `analysis/clip-slate.json`, `review/clip-candidate-evidence.md`, and `analysis/story-selection.md`.
 
-Inspect `review/clip-slate.md` and show the user the planned clips before rendering. After approval, rerun with the approved candidate IDs:
+Read `review/clip-candidate-evidence.md`, then author `review/clip-slate.md` yourself with titles, points, value judgments, recommendations, caveats, and candidate IDs. Show the agent-authored slate to the user before rendering. After approval, rerun with the approved candidate IDs:
 
 ```sh
 cutroom content-package "$PROJECT" \
@@ -118,7 +118,7 @@ cutroom shortform-pacing "$PROJECT" --source-plan "$APPROVED_CLIP_PLAN" --out-pl
 cutroom render "$PROJECT" --source-plan "$PACED_CLIP_PLAN" --out "$ROUGH_CUT_PATH"
 ```
 
-Inspect `plans/short-form-pacing.json` and the approved clip edit plan before trusting the render. The pacing plan should show applied cuts and any protected rhetorical pauses. Use `cutroom-cut-review` before final grade, captions, release, or any user-facing export; the agent must explicitly approve or patch risky cut boundaries instead of treating deterministic pause removal as final editorial judgment. If no approved clip plan exists yet, stop at `review/clip-slate.md` and ask for approval. Finish this step when `review/cut-review.md` exists, the rough cut exists, and the rendered cut matches the recorded observations.
+Inspect `plans/short-form-pacing.json` and the approved clip edit plan before trusting the render. The pacing plan should show applied cuts and any protected rhetorical pauses. Use `cutroom-cut-review` before final grade, captions, release, or any user-facing export; the agent must explicitly approve or patch risky cut boundaries instead of treating deterministic pause removal as final editorial judgment. If no approved clip plan exists yet, stop after authoring `review/clip-slate.md` and ask for approval. Finish this step when `review/cut-review.md` exists, the rough cut exists, and the rendered cut matches the recorded observations.
 
 8. Grade, caption, verify, package, and export as needed.
 

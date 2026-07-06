@@ -49,10 +49,12 @@ This writes:
 - `review/content-inventory.md`
 - `analysis/story-candidates.json`
 - `analysis/clip-slate.json`
-- `review/clip-slate.md`
+- `review/clip-candidate-evidence.md`
 - `analysis/story-selection.md`
 
-The recipe is generic. The profile supplies the content themes, audience, transcript cleanup, defaults, and post-copy templates. Inspect the inventory and clip slate before rendering.
+The recipe is generic. The profile supplies transcript cleanup and heuristic scoring defaults. The CLI does not write titles, hooks, points, recommendations, or post copy.
+
+The running agent reads `review/clip-candidate-evidence.md`, authors `review/clip-slate.md`, and shows that slate before rendering.
 
 Approve the clips to make:
 
@@ -113,7 +115,7 @@ agent-cutroom verify cutroom-project --target renders/captioned.mp4
 agent-cutroom social-package cutroom-project --platform instagram
 ```
 
-This creates a platform-matched render, then writes `plans/platform-export.json`, `plans/social-package.json`, `release/cover-frame.jpg`, and `release/post-copy.md`.
+This creates a platform-matched render, then writes `plans/platform-export.json`, `plans/social-package.json`, `release/cover-frame.jpg`, and `release/post-copy.md`. If `release/post-copy.md` says agent-authored copy is required, replace it before treating the package as publish-ready.
 
 To create the platform render explicitly:
 

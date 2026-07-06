@@ -115,8 +115,11 @@ describe("content package", () => {
     expect(result.clipSlate.approvalStatus).toBe("needs_approval");
     expect(result.clipSlate.clips[0]?.candidateId).toBe("story-000000000-000085000");
     expect(result.clipSlate.clips[0]?.approvalStatus).toBe("proposed");
+    expect(result.clipSlate.clips[0]?.transcriptExcerpt).toContain("testing the tripod");
+    expect(result.clipSlate.clips[0]).not.toHaveProperty("title");
+    expect(result.clipSlate.clips[0]).not.toHaveProperty("point");
     expect(result.inventoryMarkdown).toContain("Recipe: talking-head-story v1");
-    expect(result.clipSlateMarkdown).toContain("## Approval Needed");
+    expect(result.candidateEvidenceMarkdown).toContain("## Agent Slate Required");
     expect(result.selectionMarkdown).toContain("No story candidate has been approved yet.");
   });
 
@@ -138,8 +141,7 @@ describe("content package", () => {
     });
 
     expect(result.selectedCandidate?.id).toBe(candidateId);
-    expect(result.selectedCandidate?.suggestedArtifacts).toContain("clip");
-    expect(result.selectedCandidate?.theme).toBe("public-building-proof");
+    expect(result.selectedCandidate?.heuristicTheme).toBe("public-building-proof");
     expect(result.editPlan?.segments).toHaveLength(1);
     expect(result.editPlan?.segments[0]?.sourceStartMs).toBe(0);
     expect(result.editPlan?.segments[0]?.sourceEndMs).toBe(86_200);
@@ -260,7 +262,7 @@ describe("content package", () => {
     expect(result.editPlan?.segments[0]?.evidence).toContain('trimmed personal-process tail before "so i got"');
   });
 
-  it("uses profile title rules instead of repeated or vague hook fragments", () => {
+  it("does not generate agent-owned title or point fields", () => {
     const timeline: Timeline = {
       ...contentPackageTimeline,
       media: { ...contentPackageTimeline.media!, durationMs: 90_000 },
@@ -294,10 +296,12 @@ describe("content package", () => {
       maxCandidates: 4,
     });
 
-    expect(result.storyCandidates.candidates.map((candidate) => candidate.title)).toContain("You Need People To Try It");
-    expect(result.storyCandidates.candidates.map((candidate) => candidate.title)).toContain("Narrowing The Consulting ICP");
-    expect(result.storyCandidates.candidates.map((candidate) => candidate.title)).not.toContain("You Need People If Nothing Else You Need");
-    expect(result.storyCandidates.candidates.map((candidate) => candidate.title)).not.toContain("Its Hard to Put Into Words Like I");
+    const candidate = result.storyCandidates.candidates[0]!;
+    expect(candidate).not.toHaveProperty("title");
+    expect(candidate).not.toHaveProperty("hook");
+    expect(candidate).not.toHaveProperty("point");
+    expect(candidate).not.toHaveProperty("socialPostDraft");
+    expect(candidate.transcriptExcerpt).toContain("You need people");
   });
 
   it("fails loudly when a forced selection is missing", () => {

@@ -2,7 +2,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { isAbsolute, resolve } from "node:path";
 import { CUTROOM_VERSION } from "../schema.js";
 import {
-  clipSlateMarkdownPath,
+  clipCandidateEvidencePath,
   clipSlatePath,
   contentInventoryPath,
   editPlanPath,
@@ -44,7 +44,6 @@ export type {
   ContentRecipe,
   StoryCandidate,
   StoryCandidates,
-  SuggestedArtifact,
   WriteContentPackageOptions,
 } from "./schema.js";
 
@@ -114,7 +113,7 @@ export async function writeContentPackage(options: WriteContentPackageOptions): 
   await ensureDir(resolve(options.projectDir, "plans", "clips"));
   await writeJson(storyCandidatesPath(options.projectDir), built.storyCandidates);
   await writeJson(clipSlatePath(options.projectDir), built.clipSlate);
-  await writeFile(clipSlateMarkdownPath(options.projectDir), built.clipSlateMarkdown);
+  await writeFile(clipCandidateEvidencePath(options.projectDir), built.candidateEvidenceMarkdown);
   await writeFile(contentInventoryPath(options.projectDir), built.inventoryMarkdown);
   await writeFile(storySelectionPath(options.projectDir), built.selectionMarkdown);
   for (const approvedPlan of built.approvedEditPlans) {

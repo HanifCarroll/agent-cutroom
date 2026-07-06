@@ -16,7 +16,6 @@ import {
   type ResolvedContentPackageOptions,
   type StoryCandidate,
   type StoryCandidates,
-  type SuggestedArtifact,
 } from "../schema.js";
 
 interface ThemeScore {
@@ -82,59 +81,10 @@ function sentenceSplit(text: string): string[] {
     .filter(Boolean);
 }
 
-function firstUsefulSentence(text: string): string {
-  const sentences = sentenceSplit(text);
-  return sentences.find((sentence) => wordCount(sentence) >= 6) ?? sentences[0] ?? compact(text);
-}
-
 function shortText(text: string, maxWords: number): string {
   const words = compact(text).split(/\s+/).filter(Boolean);
   if (words.length <= maxWords) return words.join(" ");
   return `${words.slice(0, maxWords).join(" ")}...`;
-}
-
-function titleCase(raw: string): string {
-  const small = new Set(["a", "an", "and", "as", "for", "in", "of", "on", "or", "the", "to", "with"]);
-  return raw
-    .replace(/[^\w\s-]/g, "")
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 8)
-    .map((word, index) => {
-      const lower = word.toLowerCase();
-      if (index > 0 && small.has(lower)) return lower;
-      return `${lower.charAt(0).toUpperCase()}${lower.slice(1)}`;
-    })
-    .join(" ");
-}
-
-function hasRepeatedEarlyPhrase(text: string): boolean {
-  const words = text
-    .toLowerCase()
-    .replace(/[^\w'\s-]/g, " ")
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 12);
-  for (let size = 2; size <= 3; size += 1) {
-    const seen = new Set<string>();
-    for (let index = 0; index <= words.length - size; index += 1) {
-      const phrase = words.slice(index, index + size).join(" ");
-      if (seen.has(phrase)) return true;
-      seen.add(phrase);
-    }
-  }
-  return false;
-}
-
-function weakTitleSource(text: string): boolean {
-  const lower = text.toLowerCase().trim();
-  return (
-    hasRepeatedEarlyPhrase(text) ||
-    /^(it'?s|it is) hard to put into words\b/.test(lower) ||
-    /^and another thing\b/.test(lower) ||
-    /^people to\b/.test(lower) ||
-    /^so i'?m advancing\b/.test(lower)
-  );
 }
 
 function bestTheme(text: string, profile: ContentProfile): ThemeScore {
@@ -152,23 +102,23 @@ function bestTheme(text: string, profile: ContentProfile): ThemeScore {
   return ranked[0] ?? { theme: profile.themes[0], score: 0, matches: [] };
 }
 
-function hookScore(text: string, profile: ContentProfile): number {
+function openingSignalScore(text: string, profile: ContentProfile): number {
   const lower = text.toLowerCase();
   const opening = lower.slice(0, 420);
   const firstHalf = lower.slice(0, Math.max(420, Math.floor(lower.length / 2)));
-  const openingHits = profile.hookPatterns.filter((pattern) => includesPhrase(opening, pattern)).length;
-  const totalHits = profile.hookPatterns.filter((pattern) => includesPhrase(firstHalf, pattern)).length;
+  const openingHits = profile.openingSignalPatterns.filter((pattern) => includesPhrase(opening, pattern)).length;
+  const totalHits = profile.openingSignalPatterns.filter((pattern) => includesPhrase(firstHalf, pattern)).length;
   return Math.min(1, openingHits * 0.4 + totalHits * 0.18);
 }
 
-function payoffScore(text: string, profile: ContentProfile): number {
+function outcomeSignalScore(text: string, profile: ContentProfile): number {
   const lower = text.toLowerCase();
-  return Math.min(1, profile.payoffSignals.filter((signal) => includesPhrase(lower, signal)).length / 3);
+  return Math.min(1, profile.outcomeSignalPatterns.filter((signal) => includesPhrase(lower, signal)).length / 3);
 }
 
-function audienceValueScore(text: string, profile: ContentProfile): number {
+function listenerValueSignalScore(text: string, profile: ContentProfile): number {
   const lower = text.toLowerCase();
-  return Math.min(1, profile.audienceValueSignals.filter((signal) => includesPhrase(lower, signal)).length / 3);
+  return Math.min(1, profile.listenerValueSignalPatterns.filter((signal) => includesPhrase(lower, signal)).length / 3);
 }
 
 function personalDetailTailPenalty(text: string, profile: ContentProfile): number {
@@ -213,46 +163,6 @@ function hasWordTimings(segments: TranscriptSegment[]): boolean {
   return segments.some((segment) => segment.words.length > 0);
 }
 
-function suggestedArtifacts(text: string, score: number, themeId: string, profile: ContentProfile): SuggestedArtifact[] {
-  const lower = text.toLowerCase();
-  const artifacts = new Set<SuggestedArtifact>();
-  if (score >= 0.62) artifacts.add("clip");
-  if (themeId === "raw-thinking-to-content" || themeId === "public-building-proof") artifacts.add("writing");
-  if (themeId === "codex-operating-system" || themeId === "effectiveness-and-task-graph") {
-    artifacts.add("atomic-note");
-  }
-  if (profile.taskPatterns.some((pattern) => includesPhrase(lower, pattern))) artifacts.add("task");
-  if (artifacts.size === 0) artifacts.add(score >= 0.48 ? "writing" : "ignore");
-  return [...artifacts];
-}
-
-function candidateTitle(theme: ContentProfile["themes"][number], text: string, point: string, profile: ContentProfile): string {
-  const lower = text.toLowerCase();
-  const rule = profile.titleRules.find((item) =>
-    item.allPhrases.every((phrase) => includesPhrase(lower, phrase)),
-  );
-  if (rule) return rule.title;
-  const hook = firstUsefulSentence(text);
-  const source = [point, hook].find((item) => item && !weakTitleSource(item)) ?? hook;
-  if (source) return titleCase(source);
-  return theme.label;
-}
-
-function signalPoint(text: string, theme: ContentProfile["themes"][number], profile: ContentProfile): string {
-  const sentences = sentenceSplit(text);
-  return (
-    sentences.find((sentence) => {
-      const lower = sentence.toLowerCase();
-      return profile.pointSignals.some((pattern) => includesPhrase(lower, pattern));
-    }) ??
-    sentences.find((sentence) => {
-      const lower = sentence.toLowerCase();
-      return theme.keywords.some((keyword) => includesPhrase(lower, keyword));
-    }) ??
-    firstUsefulSentence(text)
-  );
-}
-
 function exactUseCaseBoost(text: string, profile: ContentProfile): number {
   const lower = text.toLowerCase();
   return profile.exactBoosts.reduce((total, rule) => {
@@ -292,9 +202,9 @@ function scoreCandidate({
 }): CandidateScore {
   const themeResult = bestTheme(text, profile);
   const duration = durationFit(durationMs, targetDurationMs, minDurationMs, maxDurationMs);
-  const hook = hookScore(text, profile);
-  const payoff = payoffScore(text, profile);
-  const audienceValue = audienceValueScore(text, profile);
+  const openingSignal = openingSignalScore(text, profile);
+  const outcomeSignal = outcomeSignalScore(text, profile);
+  const listenerValueSignal = listenerValueSignalScore(text, profile);
   const personalTail = personalDetailTailPenalty(text, profile);
   const filler = fillerPenalty(text, profile);
   const opening = openingPenalty(text);
@@ -302,10 +212,10 @@ function scoreCandidate({
   const windowScore = hasWindows ? 0.03 : 0;
   const baseScore = Math.max(
     0,
-    0.31 * themeResult.score +
-      0.18 * hook +
-      0.2 * payoff +
-      0.12 * audienceValue +
+      0.31 * themeResult.score +
+      0.18 * openingSignal +
+      0.2 * outcomeSignal +
+      0.12 * listenerValueSignal +
       0.19 * duration +
       frameScore +
       windowScore -
@@ -317,9 +227,9 @@ function scoreCandidate({
   const evidence = [
     `theme matches: ${themeResult.matches.length ? themeResult.matches.slice(0, 8).join(", ") : "none"}`,
     `duration fit: ${duration.toFixed(2)}`,
-    `hook score: ${hook.toFixed(2)}`,
-    `payoff score: ${payoff.toFixed(2)}`,
-    `audience value score: ${audienceValue.toFixed(2)}`,
+    `opening signal score: ${openingSignal.toFixed(2)}`,
+    `outcome signal score: ${outcomeSignal.toFixed(2)}`,
+    `listener-value signal score: ${listenerValueSignal.toFixed(2)}`,
   ];
   if (opening > 0) evidence.push(`opening penalty: ${opening.toFixed(2)}`);
   if (personalTail > 0) evidence.push(`personal detail tail penalty: ${personalTail.toFixed(2)}`);
@@ -404,19 +314,6 @@ function personalTailTrim(
   return null;
 }
 
-function platformFit(artifacts: SuggestedArtifact[]): string[] {
-  const fit: string[] = [];
-  if (artifacts.includes("clip")) fit.push("short-form video");
-  if (artifacts.includes("writing")) fit.push("written post");
-  if (artifacts.includes("atomic-note")) fit.push("vault knowledge");
-  if (artifacts.includes("task")) fit.push("task follow-up");
-  return fit;
-}
-
-function socialPostDraft(theme: string, point: string, profile: ContentProfile): string {
-  return profile.socialDraftTemplates.find((template) => template.theme === theme)?.body ?? point;
-}
-
 function buildCandidate({
   timeline,
   segments,
@@ -448,9 +345,6 @@ function buildCandidate({
     hasWindows: windows.length > 0,
     profile,
   });
-  const hook = firstUsefulSentence(text);
-  const point = signalPoint(text, scored.theme, profile);
-  const artifacts = suggestedArtifacts(text, scored.score, scored.theme.id, profile);
   const warnings = [...scored.warnings];
   if (!hasWordTimings(segments)) warnings.push("No word timings in this span; active-word captions cannot be produced.");
   const evidence = observations.length
@@ -459,27 +353,17 @@ function buildCandidate({
   const candidate = {
     id: storyCandidateId(startMs, endMs),
     rank: 1,
-    title: candidateTitle(scored.theme, text, point, profile),
-    theme: scored.theme.id,
-    themeLabel: scored.theme.label,
-    audience: scored.theme.audience,
+    heuristicTheme: scored.theme.id,
+    heuristicThemeLabel: scored.theme.label,
     sourceStartMs: startMs,
     sourceEndMs: endMs,
     durationMs: endMs - startMs,
     timestamp: `${formatTimestamp(startMs)}-${formatTimestamp(endMs)}`,
     timingStatus: "timestamped" as const,
-    score: Number(scored.score.toFixed(3)),
-    confidence: Number(Math.min(0.95, 0.45 + scored.score * 0.5).toFixed(3)),
-    hook: shortText(hook, 26),
-    claim: shortText(point, 34),
-    turn: shortText(hook, 26),
-    proof: shortText(text, 42),
-    payoff: shortText(point, 34),
-    platformFit: platformFit(artifacts),
-    point: shortText(point, 34),
-    whyUseful: scored.theme.whyUseful,
-    suggestedArtifacts: artifacts,
+    heuristicScore: Number(scored.score.toFixed(3)),
+    heuristicConfidence: Number(Math.min(0.95, 0.45 + scored.score * 0.5).toFixed(3)),
     transcriptText: text,
+    transcriptExcerpt: shortText(text, 70),
     source: {
       segmentIds: segments.map((segment) => segment.id),
       windowIds: windows,
@@ -493,7 +377,6 @@ function buildCandidate({
     evidence,
     scoreReasons: evidence,
     warnings,
-    socialPostDraft: socialPostDraft(scored.theme.id, point, profile),
   };
   return StoryCandidateSchema.parse(candidate);
 }
@@ -511,10 +394,9 @@ function rankedCandidate(candidate: StoryCandidate, index: number): StoryCandida
 }
 
 function selectCandidates(candidates: StoryCandidate[], maxCandidates: number): StoryCandidate[] {
-  const sorted = [...candidates].sort((a, b) => b.score - a.score || a.sourceStartMs - b.sourceStartMs);
+  const sorted = [...candidates].sort((a, b) => b.heuristicScore - a.heuristicScore || a.sourceStartMs - b.sourceStartMs);
   const selected: StoryCandidate[] = [];
   for (const candidate of sorted) {
-    if (candidate.suggestedArtifacts.includes("ignore")) continue;
     if (selected.every((item) => overlapRatio(item, candidate) < 0.42)) {
       selected.push(candidate);
     }
@@ -601,13 +483,13 @@ function createSelectedEditPlan(options: ResolvedContentPackageOptions, candidat
     id: segmentId,
     sourceStartMs: startMs,
     sourceEndMs: endMs,
-    reason: `Selected by content-package ${options.recipe.id}/${options.profile.id}: ${candidate.title}`,
+    reason: `Approved source-backed candidate ${candidate.id} from content-package ${options.recipe.id}/${options.profile.id}.`,
     sourceWindowIds: candidate.sourceWindowIds,
     evidence: [
       `story candidate ${candidate.id}`,
       `rank: ${candidate.rank}`,
-      `theme: ${candidate.themeLabel}`,
-      `score: ${candidate.score}`,
+      `heuristic theme: ${candidate.heuristicThemeLabel}`,
+      `heuristic score: ${candidate.heuristicScore}`,
       ...candidate.evidence,
       ...(tailTrim
         ? [
@@ -616,7 +498,7 @@ function createSelectedEditPlan(options: ResolvedContentPackageOptions, candidat
           ]
         : []),
     ],
-    confidence: candidate.confidence,
+    confidence: candidate.heuristicConfidence,
     warnings: candidate.warnings,
   };
   return {
@@ -647,15 +529,19 @@ function markdownTableCell(text: string): string {
   return compact(text).replaceAll("|", "\\|");
 }
 
+function planPathForCandidate(candidateId: string, clipSlate: ClipSlate): string {
+  return clipSlate.clips.find((clip) => clip.candidateId === candidateId)?.editPlanPath ?? "not approved";
+}
+
 function buildClipSlate(
   options: ResolvedContentPackageOptions,
   storyCandidates: StoryCandidates,
   approvedPlans: ApprovedClipPlan[],
 ): ClipSlate {
   const approvedPlanById = new Map(approvedPlans.map((plan) => [plan.candidateId, plan]));
-  const clipCandidates = storyCandidates.candidates.filter((candidate) => candidate.suggestedArtifacts.includes("clip"));
+  const clipCandidates = storyCandidates.candidates;
   const warnings = [...storyCandidates.warnings];
-  if (clipCandidates.length === 0) warnings.push("No retained story candidates are currently strong enough to propose as clips.");
+  if (clipCandidates.length === 0) warnings.push("No retained source-backed candidates are available for agent review.");
   return ClipSlateSchema.parse({
     version: CUTROOM_VERSION,
     createdAt: new Date().toISOString(),
@@ -675,21 +561,21 @@ function buildClipSlate(
       return {
         candidateId: candidate.id,
         rank: candidate.rank,
-        title: candidate.title,
         timestamp: candidate.timestamp,
         sourceStartMs: candidate.sourceStartMs,
         sourceEndMs: candidate.sourceEndMs,
         durationMs: candidate.durationMs,
-        score: candidate.score,
-        confidence: candidate.confidence,
-        theme: candidate.theme,
-        themeLabel: candidate.themeLabel,
-        audience: candidate.audience,
-        point: candidate.point,
-        hook: candidate.hook,
-        suggestedArtifacts: candidate.suggestedArtifacts,
+        heuristicScore: candidate.heuristicScore,
+        heuristicConfidence: candidate.heuristicConfidence,
+        heuristicTheme: candidate.heuristicTheme,
+        heuristicThemeLabel: candidate.heuristicThemeLabel,
+        transcriptExcerpt: candidate.transcriptExcerpt,
         approvalStatus: approvedPlan ? "approved" : "proposed",
         editPlanPath: approvedPlan?.editPlanPath ?? null,
+        sourceSegmentIds: candidate.sourceSegmentIds,
+        sourceWindowIds: candidate.sourceWindowIds,
+        sourceFrameIds: candidate.sourceFrameIds,
+        sourceObservationIds: candidate.sourceObservationIds,
         evidence: candidate.evidence,
         warnings: candidate.warnings,
       };
@@ -698,9 +584,9 @@ function buildClipSlate(
   });
 }
 
-function renderClipSlate(clipSlate: ClipSlate): string {
+function renderCandidateEvidence(clipSlate: ClipSlate): string {
   const lines: string[] = [
-    "# Clip Approval Slate",
+    "# Clip Candidate Evidence",
     "",
     `Generated: ${clipSlate.createdAt}`,
     `Status: ${clipSlate.approvalStatus === "approved" ? "approved" : "needs approval"}`,
@@ -713,9 +599,9 @@ function renderClipSlate(clipSlate: ClipSlate): string {
 
   if (clipSlate.approvalStatus === "needs_approval") {
     lines.push(
-      "## Approval Needed",
+      "## Agent Slate Required",
       "",
-      "Review the proposed clips below before rendering. Approve only the IDs that should become finished clips.",
+      "This file is deterministic evidence only. The running agent must author `review/clip-slate.md` with titles, hooks, value judgments, and recommendations before asking for approval.",
       "",
       "```sh",
       `agent-cutroom content-package <project> --recipe ${clipSlate.recipe.id} --profile ${clipSlate.profile.id} --approve <comma-separated-approved-candidate-ids>`,
@@ -732,31 +618,37 @@ function renderClipSlate(clipSlate: ClipSlate): string {
   }
 
   lines.push(
-    "## Proposed Clips",
+    "## Candidate Spans",
     "",
-    "| Rank | ID | Time | Score | Status | Theme | Point |",
+    "| Rank | ID | Time | Heuristic Score | Status | Heuristic Theme | Transcript Excerpt |",
     "| ---: | --- | --- | ---: | --- | --- | --- |",
   );
   for (const clip of clipSlate.clips) {
     lines.push(
-      `| ${clip.rank} | ${clip.candidateId} | ${clip.timestamp} | ${clip.score.toFixed(3)} | ${clip.approvalStatus} | ${markdownTableCell(clip.themeLabel)} | ${markdownTableCell(clip.point)} |`,
+      `| ${clip.rank} | ${clip.candidateId} | ${clip.timestamp} | ${clip.heuristicScore.toFixed(3)} | ${clip.approvalStatus} | ${markdownTableCell(clip.heuristicThemeLabel)} | ${markdownTableCell(clip.transcriptExcerpt)} |`,
     );
   }
   lines.push("");
 
   for (const clip of clipSlate.clips) {
     lines.push(
-      `## ${clip.rank}. ${clip.title}`,
+      `## ${clip.rank}. ${clip.candidateId}`,
       "",
       `- ID: ${clip.candidateId}`,
       `- Time: ${clip.timestamp}`,
       `- Duration: ${formatTimestamp(clip.durationMs)}`,
-      `- Score: ${clip.score}`,
-      `- Confidence: ${clip.confidence}`,
-      `- Audience: ${clip.audience}`,
-      `- Point: ${clip.point}`,
-      `- Hook: ${clip.hook}`,
+      `- Heuristic score: ${clip.heuristicScore}`,
+      `- Heuristic confidence: ${clip.heuristicConfidence}`,
+      `- Heuristic theme: ${clip.heuristicThemeLabel}`,
+      `- Source segments: ${clip.sourceSegmentIds.join(", ") || "none"}`,
+      `- Source windows: ${clip.sourceWindowIds.join(", ") || "none"}`,
+      `- Source frames: ${clip.sourceFrameIds.join(", ") || "none"}`,
+      `- Source observations: ${clip.sourceObservationIds.join(", ") || "none"}`,
       `- Edit plan: ${clip.editPlanPath ?? "not approved yet"}`,
+      "",
+      "### Transcript Excerpt",
+      "",
+      `> ${clip.transcriptExcerpt}`,
       "",
       "### Evidence",
       "",
@@ -781,12 +673,9 @@ function renderClipSlate(clipSlate: ClipSlate): string {
 function renderInventory(options: ResolvedContentPackageOptions, storyCandidates: StoryCandidates, clipSlate: ClipSlate): string {
   const approvedIds = new Set(clipSlate.approvedCandidateIds);
   const approved = storyCandidates.candidates.filter((candidate) => approvedIds.has(candidate.id));
-  const writing = storyCandidates.candidates.filter((candidate) =>
-    candidate.suggestedArtifacts.some((artifact) => artifact === "writing" || artifact === "atomic-note" || artifact === "task"),
-  );
   const weak = storyCandidates.candidates.filter(
     (candidate) =>
-      candidate.score < 0.58 ||
+      candidate.heuristicScore < 0.58 ||
       candidate.warnings.some((warning) => warning.includes("filler") || warning.includes("Weak")),
   );
   const lines: string[] = [
@@ -812,9 +701,10 @@ function renderInventory(options: ResolvedContentPackageOptions, storyCandidates
     "## Clip Approval",
     "",
     `- Status: ${clipSlate.approvalStatus === "approved" ? "approved" : "needs approval"}`,
-    `- Proposed clips: ${clipSlate.proposedClipCount}`,
+    `- Candidate spans: ${clipSlate.proposedClipCount}`,
     `- Approved clips: ${clipSlate.approvedCandidateIds.length}`,
-    "- Approval slate: `review/clip-slate.md`",
+    "- Candidate evidence: `review/clip-candidate-evidence.md`",
+    "- Agent-authored slate: `review/clip-slate.md`",
     "",
   );
 
@@ -825,7 +715,7 @@ function renderInventory(options: ResolvedContentPackageOptions, storyCandidates
     );
     for (const candidate of approved) {
       lines.push(
-        `- ${candidate.id} (${candidate.timestamp}): ${candidate.title} - ${candidate.point}`,
+        `- ${candidate.id} (${candidate.timestamp}) -> ${planPathForCandidate(candidate.id, clipSlate)}`,
       );
     }
     lines.push("");
@@ -834,23 +724,14 @@ function renderInventory(options: ResolvedContentPackageOptions, storyCandidates
   lines.push(
     "## Clip Candidates",
     "",
-    "| Rank | ID | Time | Score | Theme | Artifacts | Point |",
-    "| ---: | --- | --- | ---: | --- | --- | --- |",
+    "| Rank | ID | Time | Heuristic Score | Heuristic Theme | Transcript Excerpt |",
+    "| ---: | --- | --- | ---: | --- | --- |",
   );
   storyCandidates.candidates.forEach((candidate) => {
     lines.push(
-      `| ${candidate.rank} | ${candidate.id} | ${candidate.timestamp} | ${candidate.score.toFixed(3)} | ${markdownTableCell(candidate.themeLabel)} | ${candidate.suggestedArtifacts.join(", ")} | ${markdownTableCell(candidate.point)} |`,
+      `| ${candidate.rank} | ${candidate.id} | ${candidate.timestamp} | ${candidate.heuristicScore.toFixed(3)} | ${markdownTableCell(candidate.heuristicThemeLabel)} | ${markdownTableCell(candidate.transcriptExcerpt)} |`,
     );
   });
-  lines.push("");
-
-  lines.push("## Writing And Vault Opportunities", "");
-  for (const candidate of writing.slice(0, 8)) {
-    lines.push(
-      `- ${candidate.id} (${candidate.timestamp}): ${candidate.suggestedArtifacts.join(", ")} - ${candidate.point}`,
-    );
-  }
-  if (writing.length === 0) lines.push("- None selected by this pass.");
   lines.push("");
 
   lines.push("## Weak Or Review-Needed Sections", "");
@@ -865,11 +746,12 @@ function renderInventory(options: ResolvedContentPackageOptions, storyCandidates
     "## Repeatable Process",
     "",
     "1. Run `agent-cutroom prepare <project>` to refresh transcript windows, frames, silences, and the review pack.",
-    `2. Run \`agent-cutroom content-package <project> --recipe ${options.recipe.id} --profile ${options.profile.id}\` to write this inventory, story candidates, and clip approval slate.`,
-    "3. Inspect `review/clip-slate.md`, then rerun content-package with `--approve <candidate-ids>` after human approval.",
-    "4. For each approved clip plan under `plans/clips/<candidate-id>/edit-plan.json`, run `shortform-pacing`, then use `cutroom-cut-review` to approve or patch risky boundaries.",
-    "5. Run `agent-cutroom render <project> --source-plan <clip-edit-plan> --out <clip-render>` only after the approved story and reviewed cuts are acceptable.",
-    "6. Run `agent-cutroom caption <project>`, `agent-cutroom verify <project>`, and `agent-cutroom social-package <project> --platform linkedin` for each platform-matched publishable package.",
+    `2. Run \`agent-cutroom content-package <project> --recipe ${options.recipe.id} --profile ${options.profile.id}\` to write this inventory and source-backed candidate evidence.`,
+    "3. The running agent reads `analysis/story-candidates.json` and `review/clip-candidate-evidence.md`, then authors `review/clip-slate.md` with titles, value judgments, and recommendations.",
+    "4. Show the agent-authored slate to the operator, then rerun content-package with `--approve <candidate-ids>` after human approval.",
+    "5. For each approved clip plan under `plans/clips/<candidate-id>/edit-plan.json`, run `shortform-pacing`, then use `cutroom-cut-review` to approve or patch risky boundaries.",
+    "6. Run `agent-cutroom render <project> --source-plan <clip-edit-plan> --out <clip-render>` only after the approved story and reviewed cuts are acceptable.",
+    "7. Run `agent-cutroom caption <project>`, `agent-cutroom verify <project>`, and `agent-cutroom social-package <project> --platform linkedin` for each platform-matched publishable package.",
     "",
   );
 
@@ -898,36 +780,22 @@ function renderSelection(approved: StoryCandidate[], approvedPlans: ApprovedClip
   lines.push("Approved story candidates:", "");
   for (const candidate of approved) {
     const plan = planById.get(candidate.id);
-    lines.push(`- ${candidate.id}: ${candidate.title} (${candidate.timestamp}) -> \`${plan?.editPlanPath ?? "missing edit plan"}\``);
+    lines.push(`- ${candidate.id} (${candidate.timestamp}) -> \`${plan?.editPlanPath ?? "missing edit plan"}\``);
   }
   lines.push("");
 
   for (const candidate of approved) {
     const plan = planById.get(candidate.id);
     lines.push(
-      `## ${candidate.title}`,
+      `## ${candidate.id}`,
       "",
       `- ID: ${candidate.id}`,
       `- Rank: ${candidate.rank}`,
       `- Time: ${candidate.timestamp}`,
       `- Duration: ${formatTimestamp(candidate.durationMs)}`,
-      `- Score: ${candidate.score}`,
-      `- Confidence: ${candidate.confidence}`,
-      `- Theme: ${candidate.themeLabel}`,
-      `- Audience: ${candidate.audience}`,
-      `- Suggested artifacts: ${candidate.suggestedArtifacts.join(", ")}`,
-      "",
-      "### Why This One",
-      "",
-      candidate.whyUseful,
-      "",
-      "### Hook",
-      "",
-      candidate.hook,
-      "",
-      "### Point",
-      "",
-      candidate.point,
+      `- Heuristic score: ${candidate.heuristicScore}`,
+      `- Heuristic confidence: ${candidate.heuristicConfidence}`,
+      `- Heuristic theme: ${candidate.heuristicThemeLabel}`,
       "",
       "### Evidence",
       "",
@@ -999,7 +867,7 @@ export function buildTalkingHeadStoryPackage(options: ResolvedContentPackageOpti
   return {
     storyCandidates,
     clipSlate,
-    clipSlateMarkdown: renderClipSlate(clipSlate),
+    candidateEvidenceMarkdown: renderCandidateEvidence(clipSlate),
     inventoryMarkdown: renderInventory(options, storyCandidates, clipSlate),
     selectionMarkdown: renderSelection(approved, approvedEditPlans),
     editPlan,

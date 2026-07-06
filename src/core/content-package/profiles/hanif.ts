@@ -20,7 +20,6 @@ export const HANIF_CONTENT_PROFILE: ContentProfile = ContentProfileSchema.parse(
     {
       id: "consulting-focus",
       label: "Consulting Focus",
-      audience: "paid media operators and agency owners",
       keywords: [
         "consulting",
         "technical consultant",
@@ -37,13 +36,11 @@ export const HANIF_CONTENT_PROFILE: ContentProfile = ContentProfileSchema.parse(
         "custom software",
         "reporting",
       ],
-      whyUseful: "Sharpens the consulting positioning around paid-media agency operations.",
       priority: 1.08,
     },
     {
       id: "codex-operating-system",
       label: "Codex Operating System",
-      audience: "builders who use agents to run real work",
       keywords: [
         "codex",
         "operating system",
@@ -59,13 +56,11 @@ export const HANIF_CONTENT_PROFILE: ContentProfile = ContentProfileSchema.parse(
         "html file",
         "markdown file",
       ],
-      whyUseful: "Shows the workflow system behind the work, not only the final output.",
       priority: 1.04,
     },
     {
       id: "raw-thinking-to-content",
       label: "Raw Thinking To Content",
-      audience: "technical creators building a public body of work",
       keywords: [
         "content",
         "video",
@@ -82,13 +77,11 @@ export const HANIF_CONTENT_PROFILE: ContentProfile = ContentProfileSchema.parse(
         "upload",
         "algorithm",
       ],
-      whyUseful: "Connects the raw talking process to publishable writing and clips.",
       priority: 1.11,
     },
     {
       id: "public-building-proof",
       label: "Public Building Proof",
-      audience: "software builders and potential clients",
       keywords: [
         "building",
         "software",
@@ -102,13 +95,11 @@ export const HANIF_CONTENT_PROFILE: ContentProfile = ContentProfileSchema.parse(
         "missed opportunity",
         "actually do things",
       ],
-      whyUseful: "Turns private software work into public proof and relationship surface area.",
       priority: 1.14,
     },
     {
       id: "speaking-confidence",
       label: "Speaking Confidence",
-      audience: "quiet technical people trying to publish more",
       keywords: [
         "talk",
         "talking",
@@ -125,13 +116,11 @@ export const HANIF_CONTENT_PROFILE: ContentProfile = ContentProfileSchema.parse(
         "microphone",
         "tripod",
       ],
-      whyUseful: "Makes the personal shift concrete: talking is becoming a reliable creation input.",
       priority: 0.96,
     },
     {
       id: "effectiveness-and-task-graph",
       label: "Effectiveness And Task Graph",
-      audience: "builders who get stuck between planning and execution",
       keywords: [
         "effective",
         "effectiveness",
@@ -147,11 +136,10 @@ export const HANIF_CONTENT_PROFILE: ContentProfile = ContentProfileSchema.parse(
         "to-do list",
         "today list",
       ],
-      whyUseful: "Explains how to make the next action obvious instead of merely doing more tasks.",
       priority: 0.94,
     },
   ],
-  hookPatterns: [
+  openingSignalPatterns: [
     "the difference",
     "the interesting part",
     "important thing",
@@ -172,19 +160,8 @@ export const HANIF_CONTENT_PROFILE: ContentProfile = ContentProfileSchema.parse(
     "now i feel",
     "this realization",
   ],
-  taskPatterns: [
-    "i need to",
-    "i should",
-    "i want to",
-    "i'm going to",
-    "i am going to",
-    "i decided to",
-    "i'm trying to",
-    "i am trying to",
-    "i can worry about",
-  ],
   fillerPatterns: ["kind of", "sort of", "i guess", "like", "um", "uh"],
-  payoffSignals: [
+  outcomeSignalPatterns: [
     "because",
     "so that",
     "as a result",
@@ -197,7 +174,7 @@ export const HANIF_CONTENT_PROFILE: ContentProfile = ContentProfileSchema.parse(
     "the transformation",
     "what this means",
   ],
-  audienceValueSignals: [
+  listenerValueSignalPatterns: [
     "you need",
     "you can't",
     "people don't",
@@ -219,20 +196,6 @@ export const HANIF_CONTENT_PROFILE: ContentProfile = ContentProfileSchema.parse(
     "i need to understand",
     "creating a kind of curriculum",
   ],
-  pointSignals: [
-    "actually do things",
-    "never published",
-    "missed opportunity",
-    "specificity is the name of the game",
-    "that's the difference",
-    "effectiveness is",
-    "you need people",
-    "interacting with ai",
-    "writing that i can publish",
-    "directed acyclic graph",
-    "decision paralysis",
-    "chief of staff",
-  ],
   transcriptReplacements: [
     { match: "\\binteracting with codecs\\b", replacement: "interacting with Codex" },
     { match: "\\bcloud code\\b", replacement: "Claude Code" },
@@ -240,92 +203,10 @@ export const HANIF_CONTENT_PROFILE: ContentProfile = ContentProfileSchema.parse(
     { match: "\\bI the time\\b", replacement: "I dedicate the time", flags: "g" },
     { match: "\\b(\\w{3,})\\s+\\1\\b", replacement: "$1" },
   ],
-  titleRules: [
-    {
-      allPhrases: ["you need people", "feedback", "improve it"],
-      title: "You Need People To Try It",
-    },
-    {
-      allPhrases: ["advancing on consulting", "technical consultant", "icp"],
-      title: "Narrowing The Consulting ICP",
-    },
-    {
-      allPhrases: ["paralysis by decision paralysis"],
-      title: "No More Decision Paralysis",
-    },
-    {
-      allPhrases: ["actually do things", "never published"],
-      title: "Actually Do Things And Publish The Work",
-    },
-    {
-      allPhrases: ["effective", "efficient"],
-      title: "Effectiveness Beats Efficiency",
-    },
-    {
-      allPhrases: ["specificity is the name of the game"],
-      title: "Specificity Is The Name Of The Game",
-    },
-    {
-      allPhrases: ["interacting with ai", "writing that i can publish"],
-      title: "Turn Raw Talking Into Publishable Content",
-    },
-    {
-      allPhrases: ["chief of staff", "codex"],
-      title: "Codex As A Chief Of Staff",
-    },
-    {
-      allPhrases: ["directed acyclic graph"],
-      title: "A Task Graph Removes Decision Paralysis",
-    },
-  ],
   exactBoosts: [
     { allPhrases: ["actually do things", "never published"], boost: 0.16 },
     { allPhrases: ["specificity is the name of the game"], boost: 0.1 },
     { allPhrases: ["interacting with ai", "writing that i can publish"], boost: 0.08 },
     { allPhrases: ["codex", "chief of staff"], boost: 0.06 },
-  ],
-  socialDraftTemplates: [
-    {
-      theme: "consulting-focus",
-      body: [
-        "Specificity keeps showing up everywhere: sales, marketing, product, and consulting.",
-        "",
-        "The broad version of an offer can sound flexible, but the useful version says who it is for, what it changes, and why it matters.",
-        "",
-        "This is the clip where I was narrowing my consulting focus around paid-media agency operations.",
-      ].join("\n"),
-    },
-    {
-      theme: "raw-thinking-to-content",
-      body: [
-        "The useful part of recording raw thoughts is not the recording itself.",
-        "",
-        "It is having a process that can turn a long, messy take into clips, writing, vault notes, and next actions.",
-      ].join("\n"),
-    },
-    {
-      theme: "public-building-proof",
-      body: [
-        "Building quietly has a cost.",
-        "",
-        "At some point the work needs to become visible so people can react to it, try it, and tell you what is actually useful.",
-      ].join("\n"),
-    },
-    {
-      theme: "codex-operating-system",
-      body: [
-        "The agent is most useful when it has a real operating surface.",
-        "",
-        "For me, that means source notes, decisions, tasks, and review artifacts that all point back to evidence.",
-      ].join("\n"),
-    },
-    {
-      theme: "effectiveness-and-task-graph",
-      body: [
-        "Efficiency is getting through tasks quickly.",
-        "",
-        "Effectiveness is choosing the right task in the first place, then making the next action obvious enough to do.",
-      ].join("\n"),
-    },
   ],
 });

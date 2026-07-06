@@ -74,12 +74,6 @@ function firstTranscriptText(timeline: Timeline, selected: SelectedSourceCandida
     .trim();
 }
 
-function titleFromText(text: string): string {
-  const words = text.split(/\s+/).filter(Boolean).slice(0, 9);
-  if (words.length === 0) return "Untitled Clip";
-  return words.join(" ").replace(/[.!?,:;]+$/, "");
-}
-
 function shortText(text: string, maxWords: number): string {
   const words = text.replace(/\s+/g, " ").trim().split(/\s+/).filter(Boolean);
   if (words.length <= maxWords) return words.join(" ");
@@ -114,34 +108,38 @@ function postCopyLines({
 }): string[] {
   if (storyCandidate) {
     return [
-      `# ${storyCandidate.title}`,
+      title ? `# ${title}` : "# Agent-authored post copy required",
       "",
-      "## Clip Angle",
-      "",
-      storyCandidate.point,
-      "",
-      "## Post Draft",
-      "",
-      storyCandidate.socialPostDraft ?? storyCandidate.point,
-      "",
-      "## Source",
+      "## Source Candidate",
       "",
       `- Candidate: ${storyCandidate.id}`,
-      `- Theme: ${storyCandidate.themeLabel}`,
       `- Timestamp: ${sourceTimestamps.join(", ") || "not selected"}`,
+      `- Heuristic theme: ${storyCandidate.heuristicThemeLabel}`,
+      "",
+      "## Agent Notes",
+      "",
+      "Write the publishable title, post copy, and caption angle from the source evidence. Do not publish this placeholder.",
       "",
       "## Transcript Excerpt",
       "",
       `> ${shortText(sourceText, 90)}`,
       "",
+      "## Platform Tags",
+      "",
       hashtagsForPlatform(platform).join(" "),
+      "",
+      `Platform: ${platform}`,
       "",
     ];
   }
   return [
-    `# ${title}`,
+    title ? `# ${title}` : "# Agent-authored post copy required",
     "",
-    sourceText || "Post copy placeholder. Review the source transcript before publishing.",
+    "Write the publishable title, post copy, and caption angle from the source evidence. Do not publish this placeholder.",
+    "",
+    "## Transcript Excerpt",
+    "",
+    sourceText ? `> ${shortText(sourceText, 90)}` : "> No transcript excerpt available.",
     "",
     `Source: ${sourceTimestamps.join(", ") || "not selected"}`,
     "",
@@ -192,12 +190,8 @@ export async function createSocialPackage(options: CreateSocialPackageOptions): 
   });
   const storyCandidate = selected.kind === "story" ? selected.candidate : null;
   const sourceText = firstTranscriptText(options.timeline, selected);
-  const primaryTitle = options.title?.trim() || storyCandidate?.title || titleFromText(sourceText);
-  const titleOptions = [
-    primaryTitle,
-    storyCandidate?.point ? titleFromText(storyCandidate.point) : null,
-    sourceText ? titleFromText(sourceText.split(/[.!?]/)[0] ?? sourceText) : primaryTitle,
-  ].filter((value, index, values): value is string => Boolean(value) && values.indexOf(value) === index);
+  const primaryTitle = options.title?.trim() || "";
+  const titleOptions = primaryTitle ? [primaryTitle] : [];
   const coverFramePath = await writeCoverFrame(options.projectDir, options.renderPath);
   const sourceTimestamps = selected.candidate
     ? [`${formatTimestamp(selected.candidate.sourceStartMs)}-${formatTimestamp(selected.candidate.sourceEndMs)}`]

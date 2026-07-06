@@ -36,8 +36,10 @@ Supported platforms: `instagram`, `tiktok`, `youtube-shorts`, `linkedin`.
 
 3. Inspect `plans/platform-export.json`, `plans/social-package.json`, `release/cover-frame.jpg`, and `release/post-copy.md`.
 
+If `release/post-copy.md` says agent-authored copy is required, replace it with real publish copy written from the source candidate evidence before release.
+
 ## Done When
 
 - The platform export manifest names the platform, source render, output render, style pack, FFmpeg filter, media probes, and warnings.
-- The package manifest names the platform, platform render path, style pack, cover frame, title options, hashtags, and source timestamps.
-- Post copy is traceable to the transcript or selected candidate, not invented from unrelated context.
+- The package manifest names the platform, platform render path, style pack, cover frame, explicit title options, hashtags, and source timestamps.
+- Post copy is agent-authored from the transcript or selected candidate, not generated deterministically or invented from unrelated context.

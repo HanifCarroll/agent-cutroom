@@ -35,10 +35,12 @@ cutroom export-otio "$PROJECT"
 ```sh
 test -f "$PROJECT/plans/social-package.json"
 test -f "$PROJECT/release/post-copy.md"
+! grep -q "Agent-authored post copy required" "$PROJECT/release/post-copy.md"
 ```
 
 ## Done When
 
 - Verification has no failed checks.
 - The final render, caption file, social package, cover frame, post copy, and OTIO export are present when required.
+- Post copy is agent-authored when the generated package marked the file as a placeholder.
 - Any remaining warnings are explicitly reported.

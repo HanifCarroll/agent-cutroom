@@ -5,7 +5,7 @@ import { join, resolve } from "node:path";
 import { commandExists, runCommand } from "../core/process.js";
 import {
   captionPlanPath,
-  clipSlateMarkdownPath,
+  clipCandidateEvidencePath,
   clipSlatePath,
   colorGradePlanPath,
   contentInventoryPath,
@@ -495,7 +495,8 @@ async function runContentPackageCommand(project: string, options: ContentPackage
   console.log(`wrote ${result.storyCandidates.candidates.length} story candidates`);
   console.log(`inventory ${contentInventoryPath(project)}`);
   console.log(`candidates ${storyCandidatesPath(project)}`);
-  console.log(`clip slate ${clipSlateMarkdownPath(project)}`);
+  console.log(`candidate evidence ${clipCandidateEvidencePath(project)}`);
+  console.log(`agent slate required ${resolve(project, "review/clip-slate.md")}`);
   console.log(`clip slate json ${clipSlatePath(project)}`);
   console.log(`selection ${storySelectionPath(project)}`);
   if (result.approvedEditPlans.length === 0) {

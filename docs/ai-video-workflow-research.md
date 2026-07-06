@@ -259,7 +259,7 @@ For talking-head social clips, the practical style guide is consistent:
 - Keep platform packaging native: 9:16 vertical, high resolution, readable captions, face-safe text, and no obvious recycled-watermark look.
 - Use active-word captions only from real word timings.
 - B-roll should clarify the exact claim being spoken or cover a rough visual transition.
-- Package the output with a cover frame, title options, post copy, hashtags, source timestamps, and render metadata.
+- Package the output with a cover frame, explicitly supplied title options, agent-authored post copy, hashtags, source timestamps, and render metadata.
 
 Specific guardrails to encode:
 
@@ -363,7 +363,7 @@ Add focused skills rather than one large all-purpose skill:
 - `cutroom-review`: prepare footage, inspect contact sheets, record visual observations, and complete `review-pack.md`.
 - `cutroom-rough-cut`: select candidate moments, inspect `edit-plan.json`, render, and verify rough cuts.
 - `cutroom-captions`: generate word-synced ASS captions from `segments[].words[]`, burn subtitles, and inspect preview frames.
-- `cutroom-social-package`: turn a rough cut into a platform package with crop, hook, cover frame, title options, post copy, hashtags, and source timestamps.
+- `cutroom-social-package`: turn a rough cut into a platform package with crop, cover frame, explicitly supplied title options, agent-authored post copy, hashtags, and source timestamps.
 - `cutroom-hyperframes-polish`: create and verify HyperFrames title cards, overlays, lower thirds, pull quotes, and vertical compositions.
 - `cutroom-release`: run final QA, write `release-manifest.json`, checksums, render report, and publish/readiness note.
 

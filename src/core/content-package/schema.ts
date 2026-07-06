@@ -6,18 +6,13 @@ import {
   type Timeline,
 } from "../schema.js";
 
-export const SuggestedArtifactSchema = z.enum(["clip", "writing", "atomic-note", "task", "ignore"]);
-export type SuggestedArtifact = z.infer<typeof SuggestedArtifactSchema>;
-
 export const StoryTimingStatusSchema = z.enum(["timestamped", "partial", "untimed"]);
 export type StoryTimingStatus = z.infer<typeof StoryTimingStatusSchema>;
 
 export const ContentThemeSchema = z.object({
   id: z.string().min(1),
   label: z.string().min(1),
-  audience: z.string().min(1),
   keywords: z.array(z.string().min(1)).min(1),
-  whyUseful: z.string().min(1),
   priority: z.number().positive().default(1),
 });
 export type ContentTheme = z.infer<typeof ContentThemeSchema>;
@@ -29,23 +24,11 @@ export const TranscriptReplacementSchema = z.object({
 });
 export type TranscriptReplacement = z.infer<typeof TranscriptReplacementSchema>;
 
-export const TitleRuleSchema = z.object({
-  allPhrases: z.array(z.string().min(1)).min(1),
-  title: z.string().min(1),
-});
-export type TitleRule = z.infer<typeof TitleRuleSchema>;
-
 export const BoostRuleSchema = z.object({
   allPhrases: z.array(z.string().min(1)).min(1),
   boost: z.number().min(0).max(1),
 });
 export type BoostRule = z.infer<typeof BoostRuleSchema>;
-
-export const SocialDraftTemplateSchema = z.object({
-  theme: z.string().min(1),
-  body: z.string().min(1),
-});
-export type SocialDraftTemplate = z.infer<typeof SocialDraftTemplateSchema>;
 
 export const ContentProfileDefaultsSchema = z.object({
   objective: z.string().min(1),
@@ -65,17 +48,13 @@ export const ContentProfileSchema = z.object({
   inventoryTitle: z.string().min(1),
   weakThemeWarning: z.string().min(1),
   themes: z.array(ContentThemeSchema).min(1),
-  hookPatterns: z.array(z.string().min(1)).default([]),
-  taskPatterns: z.array(z.string().min(1)).default([]),
+  openingSignalPatterns: z.array(z.string().min(1)).default([]),
   fillerPatterns: z.array(z.string().min(1)).default([]),
-  payoffSignals: z.array(z.string().min(1)).default([]),
-  pointSignals: z.array(z.string().min(1)).default([]),
-  audienceValueSignals: z.array(z.string().min(1)).default([]),
+  outcomeSignalPatterns: z.array(z.string().min(1)).default([]),
+  listenerValueSignalPatterns: z.array(z.string().min(1)).default([]),
   personalDetailPatterns: z.array(z.string().min(1)).default([]),
   transcriptReplacements: z.array(TranscriptReplacementSchema).default([]),
-  titleRules: z.array(TitleRuleSchema).default([]),
   exactBoosts: z.array(BoostRuleSchema).default([]),
-  socialDraftTemplates: z.array(SocialDraftTemplateSchema).default([]),
   defaults: ContentProfileDefaultsSchema,
 });
 export type ContentProfile = z.infer<typeof ContentProfileSchema>;
@@ -98,27 +77,17 @@ export type StoryCandidateSource = z.infer<typeof StoryCandidateSourceSchema>;
 export const StoryCandidateSchema = z.object({
   id: z.string(),
   rank: z.number().int().positive(),
-  title: z.string(),
-  theme: z.string(),
-  themeLabel: z.string(),
-  audience: z.string(),
+  heuristicTheme: z.string(),
+  heuristicThemeLabel: z.string(),
   sourceStartMs: MsSchema,
   sourceEndMs: MsSchema,
   durationMs: MsSchema,
   timestamp: z.string(),
   timingStatus: StoryTimingStatusSchema,
-  score: z.number().min(0).max(1),
-  confidence: z.number().min(0).max(1),
-  hook: z.string(),
-  claim: z.string(),
-  turn: z.string(),
-  proof: z.string(),
-  payoff: z.string(),
-  platformFit: z.array(z.string()).default([]),
-  point: z.string(),
-  whyUseful: z.string(),
-  suggestedArtifacts: z.array(SuggestedArtifactSchema),
+  heuristicScore: z.number().min(0).max(1),
+  heuristicConfidence: z.number().min(0).max(1),
   transcriptText: z.string(),
+  transcriptExcerpt: z.string(),
   source: StoryCandidateSourceSchema,
   sourceSegmentIds: z.array(z.string()).default([]),
   sourceWindowIds: z.array(z.string()).default([]),
@@ -127,7 +96,6 @@ export const StoryCandidateSchema = z.object({
   evidence: z.array(z.string()).default([]),
   scoreReasons: z.array(z.string()).default([]),
   warnings: z.array(z.string()).default([]),
-  socialPostDraft: z.string().nullable().default(null),
 });
 export type StoryCandidate = z.infer<typeof StoryCandidateSchema>;
 
@@ -159,21 +127,21 @@ export type StoryCandidates = z.infer<typeof StoryCandidatesSchema>;
 export const ClipSlateItemSchema = z.object({
   candidateId: z.string(),
   rank: z.number().int().positive(),
-  title: z.string(),
   timestamp: z.string(),
   sourceStartMs: MsSchema,
   sourceEndMs: MsSchema,
   durationMs: MsSchema,
-  score: z.number().min(0).max(1),
-  confidence: z.number().min(0).max(1),
-  theme: z.string(),
-  themeLabel: z.string(),
-  audience: z.string(),
-  point: z.string(),
-  hook: z.string(),
-  suggestedArtifacts: z.array(SuggestedArtifactSchema),
+  heuristicScore: z.number().min(0).max(1),
+  heuristicConfidence: z.number().min(0).max(1),
+  heuristicTheme: z.string(),
+  heuristicThemeLabel: z.string(),
+  transcriptExcerpt: z.string(),
   approvalStatus: z.enum(["proposed", "approved"]),
   editPlanPath: z.string().nullable(),
+  sourceSegmentIds: z.array(z.string()).default([]),
+  sourceWindowIds: z.array(z.string()).default([]),
+  sourceFrameIds: z.array(z.string()).default([]),
+  sourceObservationIds: z.array(z.string()).default([]),
   evidence: z.array(z.string()).default([]),
   warnings: z.array(z.string()).default([]),
 });
@@ -207,7 +175,7 @@ export interface ApprovedClipPlan {
 export interface ContentPackage {
   storyCandidates: StoryCandidates;
   clipSlate: ClipSlate;
-  clipSlateMarkdown: string;
+  candidateEvidenceMarkdown: string;
   inventoryMarkdown: string;
   selectionMarkdown: string;
   editPlan: EditPlan | null;

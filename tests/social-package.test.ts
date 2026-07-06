@@ -125,10 +125,11 @@ describe("createSocialPackage", () => {
     expect(socialPackage.sourceCandidateId).toBe(storyCandidate.id);
     expect(socialPackage.sourceTimestamps).toEqual([storyCandidate.timestamp]);
     expect(postCopy).toContain(`- Candidate: ${storyCandidate.id}`);
+    expect(postCopy).toContain("Agent-authored post copy required");
     expect(postCopy).toContain(storyCandidate.transcriptText.slice(0, 32));
     expect(postCopy).not.toContain("stale highlight transcript text");
     expect(postCopy).not.toContain("story-001");
-    expect(socialPackage.titleOptions).toContain(storyCandidate.title);
+    expect(socialPackage.titleOptions).toEqual([]);
   });
 
   it("warns when the render matches social dimensions but not the style-pack fps", async () => {

@@ -17,9 +17,10 @@ raw video + transcript
   -> agent observations
   -> analysis/highlight-candidates.json
   -> analysis/story-candidates.json
-  -> review/content-inventory.md
-  -> review/clip-slate.md
   -> analysis/clip-slate.json
+  -> review/content-inventory.md
+  -> review/clip-candidate-evidence.md
+  -> agent-authored review/clip-slate.md
   -> approved clip ids
   -> edit-plan.json
   -> plans/clips/<candidate-id>/edit-plan.json
@@ -93,12 +94,13 @@ bun dist/cli/index.js content-package ./my-cut \
   --target-seconds 75
 ```
 
-This writes `review/content-inventory.md`, `analysis/story-candidates.json`, `analysis/clip-slate.json`, `review/clip-slate.md`, and `analysis/story-selection.md`. The recipe is generic; the `hanif` profile contains the current themes, transcript cleanup, scoring defaults, and post-copy scaffolds for Hanif's videos.
+This writes `review/content-inventory.md`, `analysis/story-candidates.json`, `analysis/clip-slate.json`, `review/clip-candidate-evidence.md`, and `analysis/story-selection.md`. The recipe is generic; the `hanif` profile contains transcript cleanup and heuristic scoring defaults for Hanif's videos. It does not write titles, hooks, points, recommendations, or post copy.
 
-Review the proposed clip slate before rendering:
+The running agent must read the evidence, author `review/clip-slate.md`, and show that slate before rendering:
 
 ```sh
-open ./my-cut/review/clip-slate.md
+open ./my-cut/review/clip-candidate-evidence.md
+# agent writes ./my-cut/review/clip-slate.md
 bun dist/cli/index.js content-package ./my-cut \
   --recipe talking-head-story \
   --profile hanif \
@@ -251,7 +253,7 @@ See [docs/artifact-contract.md](docs/artifact-contract.md) for the project file 
 
 ## Content Packages
 
-`agent-cutroom content-package` turns prepared transcript/windows/frame evidence into a content inventory, ranked story candidates, and a clip approval slate. It does not create renderable clip plans until candidate IDs are approved.
+`agent-cutroom content-package` turns prepared transcript/windows/frame evidence into a content inventory, ranked source-backed candidates, and approval state. It does not create audience-facing titles, hooks, points, recommendations, or social copy.
 
 ```sh
 agent-cutroom content-package <project> \
@@ -259,9 +261,9 @@ agent-cutroom content-package <project> \
   --profile hanif
 ```
 
-The built-in `talking-head-story` recipe owns deterministic candidate generation and edit-plan writing. The `hanif` content profile owns the themes, audience, transcript corrections, score defaults, and social post draft templates. See [docs/content-package.md](docs/content-package.md) for profile shape, workflow, and quality gates.
+The built-in `talking-head-story` recipe owns deterministic candidate generation, evidence writing, and edit-plan writing. The `hanif` content profile owns transcript corrections and heuristic scoring signals. See [docs/content-package.md](docs/content-package.md) for profile shape, workflow, and quality gates.
 
-The approval loop is explicit: inspect `review/clip-slate.md`, approve one or more candidate IDs with `--approve`, then render each approved clip from its own plan in `plans/clips/<candidate-id>/`.
+The approval loop is explicit: the agent reads `review/clip-candidate-evidence.md`, authors `review/clip-slate.md`, shows it to the operator, gets approved candidate IDs, then renders each approved clip from its own plan in `plans/clips/<candidate-id>/`.
 
 ## Short-Form Polish
 
@@ -316,4 +318,4 @@ bun run build
 
 ## Status
 
-This is an early public prototype. The stable contract is the file-based workflow: `cutroom.json`, `timeline.json`, `review/review-pack.md`, `review/content-inventory.md`, `review/clip-slate.md`, `analysis/highlight-candidates.json`, `analysis/story-candidates.json`, `analysis/clip-slate.json`, `analysis/story-selection.md`, `edit-plan.json`, `plans/clips/<candidate-id>/edit-plan.json`, `plans/caption-plan.json`, `plans/platform-export.json`, `plans/social-package.json`, `renders/verify-report.json`, `exports/edit.otio`, and rendered outputs.
+This is an early public prototype. The stable contract is the file-based workflow: `cutroom.json`, `timeline.json`, `review/review-pack.md`, `review/content-inventory.md`, `review/clip-candidate-evidence.md`, agent-authored `review/clip-slate.md`, `analysis/highlight-candidates.json`, `analysis/story-candidates.json`, `analysis/clip-slate.json`, `analysis/story-selection.md`, `edit-plan.json`, `plans/clips/<candidate-id>/edit-plan.json`, `plans/caption-plan.json`, `plans/platform-export.json`, `plans/social-package.json`, `renders/verify-report.json`, `exports/edit.otio`, and rendered outputs.

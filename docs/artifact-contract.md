@@ -24,6 +24,7 @@ project/
   review/
     review-pack.md
     content-inventory.md
+    clip-candidate-evidence.md
     clip-slate.md
   captions/
     captions.ass
@@ -74,11 +75,12 @@ project/
 
 - `review/review-pack.md`: agent-facing Markdown review surface with transcript windows and frame references.
 - `analysis/highlight-candidates.json`: candidate clip windows with source timestamps, transcript text, reasons, evidence IDs, warnings, and scores.
-- `review/content-inventory.md`: recipe/profile content inventory with approval status, clip candidates, writing/vault opportunities, weak sections, and repeatable process.
-- `analysis/story-candidates.json`: source-backed story candidates produced by `agent-cutroom content-package`, including recipe/profile metadata, stable source-range IDs, source evidence, score reasons, suggested artifacts, and warnings.
-- `analysis/clip-slate.json`: validated clip approval slate with proposed clips, approved candidate IDs, per-clip edit-plan paths, source timestamps, scores, evidence, and warnings.
-- `review/clip-slate.md`: human-readable approval surface. Show this to the operator before rendering multiple clips.
-- `analysis/story-selection.md`: approved story summary with hook, point, evidence, warnings, and approved edit-plan segments.
+- `review/content-inventory.md`: recipe/profile content inventory with approval status, source-backed candidate spans, weak sections, and repeatable process.
+- `analysis/story-candidates.json`: source-backed story candidates produced by `agent-cutroom content-package`, including recipe/profile metadata, stable source-range IDs, source evidence, heuristic signals, score reasons, and warnings.
+- `analysis/clip-slate.json`: deterministic approval state with candidate IDs, approved candidate IDs, per-clip edit-plan paths, source timestamps, transcript excerpts, heuristic signals, evidence, and warnings.
+- `review/clip-candidate-evidence.md`: deterministic evidence surface for the running agent. This is not the operator approval slate.
+- `review/clip-slate.md`: agent-authored approval surface. It should contain titles, plain-language points, recommendations, caveats, and candidate IDs to show the operator before rendering multiple clips.
+- `analysis/story-selection.md`: approved source-candidate summary with source timestamps, heuristic signals, evidence, warnings, and approved edit-plan segments.
 - `edit-plan.json`: project-level single-plan/default guard. With one approved clip it mirrors that clip plan; without a single approved clip it contains no renderable segments.
 - `plans/clips/<candidate-id>/edit-plan.json`: source ranges for one approved clip. Each segment has source timing, reason, source windows, evidence, confidence, and warnings.
 - `plans/short-form-pacing.json`: source edit plan path, output edit plan path, pacing options, before/after duration, exact removed pause ranges, and protected rhetorical pauses.
@@ -86,7 +88,7 @@ project/
 - `plans/color-grade.json`: highlight-protected subject-mask shadow-lift method, FFmpeg filter graph, subject and luma mask geometry, grade settings, preview frame paths, and output path.
 - `plans/caption-plan.json`: subtitle format, target media, style, events, warnings, and optional burned output path.
 - `plans/platform-export.json`: selected platform, source render, output render, target style pack, FFmpeg platform filter, source/output media probe data, and warnings.
-- `plans/social-package.json`: platform, style pack, render path, cover frame, title options, hashtags, source timestamps, and warnings.
+- `plans/social-package.json`: platform, style pack, render path, cover frame, explicitly supplied title options, hashtags, source timestamps, and warnings.
 - `hyperframes/brief.md`: handoff brief for a polished HyperFrames composition.
 
 ## Render And Release Artifacts
@@ -100,13 +102,14 @@ project/
 - `renders/verify-frames/*`: preview frames used to inspect a render.
 - `exports/edit.otio`: OpenTimelineIO-compatible export from `edit-plan.json`.
 - `release/cover-frame.jpg`: cover image extracted for a social package.
-- `release/post-copy.md`: editable post copy scaffold.
+- `release/post-copy.md`: editable post copy file. When it says agent-authored copy is required, it is a source-evidence placeholder, not publishable copy.
 
 ## Contracts
 
 - Timestamped edits must come from timestamped artifacts.
 - Active-word captions must come from `segments[].words[]`.
 - Visual judgments must be written as observations, not only kept in chat.
-- Generated B-roll, title cards, captions, and social copy should point back to source timestamps or candidate IDs.
-- Content package profiles may tune themes and post-copy scaffolds, but selected moments must still come from timestamped transcript/project evidence.
+- Titles, hooks, points, audience/value judgments, clip recommendations, and publish copy must be authored by the running agent or operator from source evidence.
+- Generated B-roll, title cards, captions, and agent-authored social copy should point back to source timestamps or candidate IDs.
+- Content package profiles may tune transcript cleanup and heuristic scoring signals, but selected moments must still come from timestamped transcript/project evidence.
 - Rendered files should have a verification report before release.

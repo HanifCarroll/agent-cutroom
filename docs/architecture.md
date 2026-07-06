@@ -22,8 +22,14 @@ project/
     frames.jpg
   review/
     review-pack.md
+    content-inventory.md
+    clip-candidate-evidence.md
+    clip-slate.md
   analysis/
     highlight-candidates.json
+    story-candidates.json
+    clip-slate.json
+    story-selection.md
   captions/
     captions.ass
   plans/
@@ -50,10 +56,14 @@ project/
 - `timeline.json`: media metadata, transcript segments, silence ranges, extracted frame paths, review windows, and agent observations.
 - `review/review-pack.md`: Markdown surface for Codex to review frames and transcript context.
 - `analysis/highlight-candidates.json`: ranked candidate clip windows with reasons, evidence, warnings, and timestamps.
+- `analysis/story-candidates.json`: source-backed content package candidates with source timestamps, transcript excerpts, heuristic signals, evidence, and warnings.
+- `analysis/clip-slate.json`: deterministic approval state for content package candidates and approved clip plans.
+- `review/clip-candidate-evidence.md`: deterministic source evidence for the running agent.
+- `review/clip-slate.md`: agent-authored approval slate with titles, points, recommendations, caveats, and candidate IDs.
 - `edit-plan.json`: source ranges to keep.
 - `plans/caption-plan.json`: word-timed caption plan and style settings.
 - `plans/platform-export.json`: platform target, source render, output render, style pack, FFmpeg filter, media probes, and warnings.
-- `plans/social-package.json`: platform style pack, cover frame, title options, hashtags, and post-copy paths.
+- `plans/social-package.json`: platform style pack, cover frame, explicitly supplied title options, hashtags, source timestamps, and post-copy path.
 - `renders/platform-<platform>.mp4`: H.264/AAC MP4 export matched to the selected platform style pack.
 - `renders/verify-report.json`: probe, decode, duration, and preview-frame verification report.
 - `exports/edit.otio`: OpenTimelineIO-compatible export.
@@ -61,4 +71,4 @@ project/
 
 ## Design Constraint
 
-Agent Cutroom does not hide editorial logic inside heuristics or model calls. It makes evidence inspectable and records the agent's decisions explicitly.
+Agent Cutroom does not hide editorial logic inside heuristics or model calls. It makes evidence inspectable and records the agent's decisions explicitly. Titles, hooks, clip recommendations, value judgments, and publish copy are agent/operator-authored from source evidence.
