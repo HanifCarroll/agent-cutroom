@@ -8,15 +8,18 @@ import type { EditPlan, Frame, MediaInfo, SilenceRange } from "./schema.js";
 
 interface FfprobeStream {
   codec_type?: string;
+  codec_name?: string;
   width?: number;
   height?: number;
   avg_frame_rate?: string;
   r_frame_rate?: string;
+  bit_rate?: string;
 }
 
 interface FfprobeFormat {
   duration?: string;
   format_name?: string;
+  bit_rate?: string;
 }
 
 interface FfprobeJson {
@@ -32,6 +35,13 @@ function parseRate(rate: string | undefined): number | null {
   if (!Number.isFinite(n) || !Number.isFinite(d) || d === 0) return null;
   const value = n / d;
   return value > 0 ? value : null;
+}
+
+function parseBps(value: string | undefined): number | null {
+  if (!value) return null;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) return null;
+  return Math.round(parsed);
 }
 
 export async function ffprobeMedia(
@@ -60,6 +70,11 @@ export async function ffprobeMedia(
     width: Number.isInteger(video?.width) ? video?.width ?? null : null,
     height: Number.isInteger(video?.height) ? video?.height ?? null : null,
     fps: parseRate(video?.avg_frame_rate) ?? parseRate(video?.r_frame_rate),
+    videoCodec: video?.codec_name ?? null,
+    audioCodec: audio?.codec_name ?? null,
+    videoBitrateBps: parseBps(video?.bit_rate),
+    audioBitrateBps: parseBps(audio?.bit_rate),
+    overallBitrateBps: parseBps(parsed.format?.bit_rate),
     hasAudio: Boolean(audio),
     hasVideo: Boolean(video),
     sizeBytes: stats.size,

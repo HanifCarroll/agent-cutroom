@@ -89,6 +89,11 @@ export const MediaInfoSchema = z.object({
   width: z.number().int().positive().nullable(),
   height: z.number().int().positive().nullable(),
   fps: z.number().positive().nullable(),
+  videoCodec: z.string().nullable().default(null),
+  audioCodec: z.string().nullable().default(null),
+  videoBitrateBps: z.number().int().nonnegative().nullable().default(null),
+  audioBitrateBps: z.number().int().nonnegative().nullable().default(null),
+  overallBitrateBps: z.number().int().nonnegative().nullable().default(null),
   hasAudio: z.boolean(),
   hasVideo: z.boolean(),
   sizeBytes: MsSchema,
@@ -338,6 +343,8 @@ export const PlatformStylePackSchema = z.object({
   width: z.number().int().positive(),
   height: z.number().int().positive(),
   fps: z.number().positive(),
+  videoCodec: z.string(),
+  audioCodec: z.string(),
   videoBitrate: z.string(),
   audioBitrate: z.string(),
   safeZone: z.object({
@@ -368,6 +375,23 @@ export const SocialPackageSchema = z.object({
 });
 
 export type SocialPackage = z.infer<typeof SocialPackageSchema>;
+
+export const PlatformExportPlanSchema = z.object({
+  version: z.literal(CUTROOM_VERSION),
+  createdAt: z.string(),
+  platform: PlatformSchema,
+  sourcePath: z.string(),
+  outputPath: z.string(),
+  stylePack: PlatformStylePackSchema,
+  filterGraph: z.string().nullable(),
+  skipped: z.boolean(),
+  reason: z.string().nullable(),
+  sourceMedia: MediaInfoSchema.nullable(),
+  outputMedia: MediaInfoSchema.nullable(),
+  warnings: z.array(z.string()).default([]),
+});
+
+export type PlatformExportPlan = z.infer<typeof PlatformExportPlanSchema>;
 
 export function emptyTimeline(): Timeline {
   return {

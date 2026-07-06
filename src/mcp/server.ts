@@ -533,27 +533,54 @@ server.registerTool(
 );
 
 server.registerTool(
+  "platform_export",
+  {
+    title: "Export Platform Render",
+    description:
+      "Use `platform_export` after a render exists to create a platform-matched MP4 using the selected style pack dimensions, fps, video bitrate, and audio bitrate.",
+    inputSchema: {
+      project: ProjectArg,
+      platform: z.enum(["instagram", "tiktok", "youtube-shorts", "linkedin"]).default("instagram"),
+      target: z.string().default("renders/captioned.mp4"),
+      out: z.string().optional(),
+    },
+    outputSchema: { status: z.string(), text: z.string(), resources: z.array(z.object({ uri: z.string(), name: z.string() })) },
+    annotations: { readOnlyHint: false, openWorldHint: false },
+  },
+  async ({ project, platform, target, out }) => {
+    const args = ["platform-export", project, "--platform", platform, "--target", target];
+    if (out) args.push("--out", out);
+    return toolResult(await callCli(args), [
+      artifactLink(project, "plans/platform-export.json", "Platform export plan"),
+    ]);
+  },
+);
+
+server.registerTool(
   "social_package",
   {
     title: "Create Social Package",
     description:
-      "Use `social_package` after a render exists to write a platform style pack, cover frame, post copy, and plans/social-package.json.",
+      "Use `social_package` after a render exists to create a platform-matched render, style pack, cover frame, post copy, and plans/social-package.json.",
     inputSchema: {
       project: ProjectArg,
       platform: z.enum(["instagram", "tiktok", "youtube-shorts", "linkedin"]).default("instagram"),
       render: z.string().optional(),
+      platformOut: z.string().optional(),
       candidate: z.string().optional(),
       title: z.string().optional(),
     },
     outputSchema: { status: z.string(), text: z.string(), resources: z.array(z.object({ uri: z.string(), name: z.string() })) },
     annotations: { readOnlyHint: false, openWorldHint: false },
   },
-  async ({ project, platform, render, candidate, title }) => {
+  async ({ project, platform, render, platformOut, candidate, title }) => {
     const args = ["social-package", project, "--platform", platform];
     if (render) args.push("--render", render);
+    if (platformOut) args.push("--platform-out", platformOut);
     if (candidate) args.push("--candidate", candidate);
     if (title) args.push("--title", title);
     return toolResult(await callCli(args), [
+      artifactLink(project, "plans/platform-export.json", "Platform export plan"),
       artifactLink(project, "plans/social-package.json", "Social package manifest"),
       artifactLink(project, "release/post-copy.md", "Post copy"),
     ]);

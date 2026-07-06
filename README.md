@@ -25,6 +25,8 @@ raw video + transcript
   -> captions/captions.ass
   -> renders/captioned.mp4
   -> renders/verify-report.json
+  -> plans/platform-export.json
+  -> renders/platform-<platform>.mp4
   -> plans/social-package.json
   -> exports/edit.otio
   -> HyperFrames polish pass
@@ -114,6 +116,8 @@ bun dist/cli/index.js find-moments ./my-cut \
 bun dist/cli/index.js caption ./my-cut --target renders/graded.mp4 --out renders/captioned.mp4
 bun dist/cli/index.js verify ./my-cut --target renders/captioned.mp4
 bun dist/cli/index.js social-package ./my-cut --platform instagram
+# or explicitly:
+bun dist/cli/index.js platform-export ./my-cut --platform instagram --target renders/captioned.mp4
 bun dist/cli/index.js export-otio ./my-cut
 ```
 
@@ -145,6 +149,7 @@ agent-cutroom grade-preview <project>
 agent-cutroom grade-apply <project>
 agent-cutroom caption <project>
 agent-cutroom verify <project>
+agent-cutroom platform-export <project>
 agent-cutroom social-package <project>
 agent-cutroom export-otio <project>
 agent-cutroom hyperframes-brief <project>
@@ -288,4 +293,4 @@ bun run build
 
 ## Status
 
-This is an early public prototype. The stable contract is the file-based workflow: `cutroom.json`, `timeline.json`, `review/review-pack.md`, `review/content-inventory.md`, `analysis/highlight-candidates.json`, `analysis/story-candidates.json`, `analysis/story-selection.md`, `edit-plan.json`, `plans/caption-plan.json`, `plans/social-package.json`, `renders/verify-report.json`, `exports/edit.otio`, and rendered outputs.
+This is an early public prototype. The stable contract is the file-based workflow: `cutroom.json`, `timeline.json`, `review/review-pack.md`, `review/content-inventory.md`, `analysis/highlight-candidates.json`, `analysis/story-candidates.json`, `analysis/story-selection.md`, `edit-plan.json`, `plans/caption-plan.json`, `plans/platform-export.json`, `plans/social-package.json`, `renders/verify-report.json`, `exports/edit.otio`, and rendered outputs.

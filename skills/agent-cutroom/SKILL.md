@@ -118,6 +118,7 @@ cutroom grade-preview "$PROJECT" --target renders/rough-cut.mp4
 cutroom grade-apply "$PROJECT" --target renders/rough-cut.mp4 --out renders/graded.mp4
 cutroom caption "$PROJECT" --target renders/graded.mp4 --out renders/captioned.mp4
 cutroom verify "$PROJECT" --target renders/captioned.mp4
+cutroom platform-export "$PROJECT" --platform instagram --target renders/captioned.mp4
 cutroom social-package "$PROJECT" --platform instagram
 cutroom export-otio "$PROJECT"
 ```
@@ -125,6 +126,8 @@ cutroom export-otio "$PROJECT"
 Run `grade-preview` when the subject is too dark. Inspect the preview frames under `review/color-grade/`, then adjust subject-region or shadow/highlight threshold options before `grade-apply` when needed. The grade mask should not create a visible wall spotlight.
 
 Use `caption` only when real word timings exist. It writes `plans/caption-plan.json`, `captions/captions.ass`, and, by default, `renders/captioned.mp4`.
+
+Use `platform-export` or the default `social-package` behavior to create a platform-matched H.264/AAC MP4 from the finished render. This writes `plans/platform-export.json` and `renders/platform-<platform>.mp4`.
 
 9. Polish after the rough cut is real.
 

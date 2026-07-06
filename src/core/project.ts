@@ -19,6 +19,7 @@ export const STORY_SELECTION_FILE = "analysis/story-selection.md";
 export const CONTENT_INVENTORY_FILE = "review/content-inventory.md";
 export const CAPTION_PLAN_FILE = "plans/caption-plan.json";
 export const SOCIAL_PACKAGE_FILE = "plans/social-package.json";
+export const PLATFORM_EXPORT_PLAN_FILE = "plans/platform-export.json";
 export const SHORT_FORM_PACING_FILE = "plans/short-form-pacing.json";
 export const COLOR_GRADE_PLAN_FILE = "plans/color-grade.json";
 export const VERIFY_REPORT_FILE = "renders/verify-report.json";
@@ -62,6 +63,10 @@ export function captionPlanPath(projectDir: string): string {
 
 export function socialPackagePath(projectDir: string): string {
   return join(resolveProjectDir(projectDir), SOCIAL_PACKAGE_FILE);
+}
+
+export function platformExportPlanPath(projectDir: string): string {
+  return join(resolveProjectDir(projectDir), PLATFORM_EXPORT_PLAN_FILE);
 }
 
 export function shortFormPacingPath(projectDir: string): string {

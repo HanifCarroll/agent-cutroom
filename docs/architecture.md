@@ -28,10 +28,12 @@ project/
     captions.ass
   plans/
     caption-plan.json
+    platform-export.json
     social-package.json
   renders/
     rough-cut.mp4
     captioned.mp4
+    platform-<platform>.mp4
     verify-report.json
   exports/
     edit.otio
@@ -50,7 +52,9 @@ project/
 - `analysis/highlight-candidates.json`: ranked candidate clip windows with reasons, evidence, warnings, and timestamps.
 - `edit-plan.json`: source ranges to keep.
 - `plans/caption-plan.json`: word-timed caption plan and style settings.
+- `plans/platform-export.json`: platform target, source render, output render, style pack, FFmpeg filter, media probes, and warnings.
 - `plans/social-package.json`: platform style pack, cover frame, title options, hashtags, and post-copy paths.
+- `renders/platform-<platform>.mp4`: H.264/AAC MP4 export matched to the selected platform style pack.
 - `renders/verify-report.json`: probe, decode, duration, and preview-frame verification report.
 - `exports/edit.otio`: OpenTimelineIO-compatible export.
 - `hyperframes/brief.md`: production brief for a polished HyperFrames pass.

@@ -76,6 +76,7 @@ project/
 - `review/cut-review.md`: agent-authored boundary QA with reviewed cut timestamps, transcript phrases, pass/fix decisions, edit-plan patches, and remaining risks.
 - `plans/color-grade.json`: highlight-protected subject-mask shadow-lift method, FFmpeg filter graph, subject and luma mask geometry, grade settings, preview frame paths, and output path.
 - `plans/caption-plan.json`: subtitle format, target media, style, events, warnings, and optional burned output path.
+- `plans/platform-export.json`: selected platform, source render, output render, target style pack, FFmpeg platform filter, source/output media probe data, and warnings.
 - `plans/social-package.json`: platform, style pack, render path, cover frame, title options, hashtags, source timestamps, and warnings.
 - `hyperframes/brief.md`: handoff brief for a polished HyperFrames composition.
 
@@ -85,6 +86,7 @@ project/
 - `renders/graded.mp4`: optional subject-mask shadow-lift render.
 - `captions/captions.ass`: ASS subtitle file for active-word caption burn-in.
 - `renders/captioned.mp4`: captioned render when `agent-cutroom caption` burns captions.
+- `renders/platform-<platform>.mp4`: platform-matched MP4 from `agent-cutroom platform-export` or `agent-cutroom social-package`.
 - `renders/verify-report.json`: existence, probe, duration, decode, and preview-frame verification.
 - `renders/verify-frames/*`: preview frames used to inspect a render.
 - `exports/edit.otio`: OpenTimelineIO-compatible export from `edit-plan.json`.

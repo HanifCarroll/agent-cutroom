@@ -23,11 +23,12 @@ describe("MCP server", () => {
           "grade_preview",
           "grade_apply",
           "caption",
+          "platform_export",
           "social_package",
           "export_otio",
         ]),
       );
-      expect(tools.tools.length).toBe(15);
+      expect(tools.tools.length).toBe(16);
 
       const prompts = await client.listPrompts();
       expect(prompts.prompts.map((prompt) => prompt.name)).toEqual(

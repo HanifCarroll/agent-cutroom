@@ -97,7 +97,17 @@ agent-cutroom verify cutroom-project --target renders/captioned.mp4
 agent-cutroom social-package cutroom-project --platform instagram
 ```
 
-This writes `plans/social-package.json`, `release/cover-frame.jpg`, and `release/post-copy.md`.
+This creates a platform-matched render, then writes `plans/platform-export.json`, `plans/social-package.json`, `release/cover-frame.jpg`, and `release/post-copy.md`.
+
+To create the platform render explicitly:
+
+```sh
+agent-cutroom platform-export cutroom-project \
+  --platform instagram \
+  --target renders/captioned.mp4
+```
+
+Platform exports must match the selected style pack dimensions, fps, video codec, video bitrate, and audio bitrate before upload.
 
 ## 9. Export OTIO
 

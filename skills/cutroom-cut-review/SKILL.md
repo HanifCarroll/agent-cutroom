@@ -29,6 +29,7 @@ Prioritize:
 
 - every cut in `plans/short-form-pacing.json`
 - every adjacent pair of `edit-plan.json` segments
+- the first kept boundary and final kept boundary
 - boundaries near long words, low-confidence words, sentence endings, question chains, lists, pivots, and emotional emphasis
 - boundaries the user flagged as wrong
 
@@ -40,13 +41,15 @@ For each boundary, read at least the previous 5 words and next 5 words from `tim
 
 Approve only when the edit preserves:
 
+- a clean opening thought that does not start with dangling context like `and`, `but`, `that`, `whatever it is`, `this`, `it`, or another unresolved pronoun
+- a clean closing thought that does not stop before the sentence lands
 - the complete spoken word and its natural release
 - the meaning of the sentence or rhetorical chain
 - enough breath for intentional emphasis
 - a sensible visual jump
 - a caption phrase that does not imply missing speech
 
-Mark a boundary `fix` when it sounds or reads like it may clip a word, rush the thought, split a rhetorical chain, or remove a pause that carries meaning. Do not hide behind the deterministic plan when the edit feels wrong.
+Mark a boundary `fix` when it sounds or reads like it may clip a word, rush the thought, split a rhetorical chain, start mid-sentence, end before the payoff lands, or remove a pause that carries meaning. Do not hide behind the deterministic plan when the edit feels wrong.
 
 5. Patch the edit plan before final output.
 
@@ -54,6 +57,8 @@ Adjust `edit-plan.json` manually and conservatively. Common fixes:
 
 - move the previous segment end later to preserve a final word tail
 - move the next segment start earlier to preserve the beginning of the next word
+- move the first segment start to the next complete sentence or coherent hook
+- move the final segment end to include the complete closing sentence or payoff
 - remove the cut when the pause is part of delivery
 - widen the kept pause around question chains, sentence endings, or emphatic phrases
 

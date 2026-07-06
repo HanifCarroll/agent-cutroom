@@ -272,6 +272,32 @@ function storyCandidateId(startMs: number, endMs: number): string {
   return `story-${String(startMs).padStart(9, "0")}-${String(endMs).padStart(9, "0")}`;
 }
 
+function sentenceEnds(text: string): boolean {
+  return /[.!?]["')\]]*$/.test(text.trim());
+}
+
+function timelineWords(timeline: Timeline) {
+  return timeline.transcriptSegments
+    .flatMap((segment) => segment.words)
+    .filter((word) => word.endMs > word.startMs)
+    .sort((a, b) => a.startMs - b.startMs || a.endMs - b.endMs);
+}
+
+function cleanLeadStartMs(timeline: Timeline, candidateStartMs: number, requestedStartMs: number): number {
+  const words = timelineWords(timeline);
+  const crossedWords = words.filter(
+    (word) => word.endMs > requestedStartMs && word.endMs <= candidateStartMs,
+  );
+  let sentenceEnd = crossedWords.at(-1);
+  while (sentenceEnd && !sentenceEnds(sentenceEnd.text)) {
+    crossedWords.pop();
+    sentenceEnd = crossedWords.at(-1);
+  }
+  if (sentenceEnd) return Math.max(requestedStartMs, sentenceEnd.endMs);
+  if (crossedWords.length > 0) return candidateStartMs;
+  return requestedStartMs;
+}
+
 function platformFit(artifacts: SuggestedArtifact[]): string[] {
   const fit: string[] = [];
   if (artifacts.includes("clip")) fit.push("short-form video");
@@ -436,7 +462,8 @@ function selectedCandidate(candidates: StoryCandidate[], selectedId?: string | n
 
 function createSelectedEditPlan(options: ResolvedContentPackageOptions, candidate: StoryCandidate): EditPlan {
   const sourceEnd = options.timeline.media?.durationMs ?? candidate.sourceEndMs;
-  const startMs = Math.max(0, candidate.sourceStartMs - options.leadPaddingMs);
+  const requestedStartMs = Math.max(0, candidate.sourceStartMs - options.leadPaddingMs);
+  const startMs = cleanLeadStartMs(options.timeline, candidate.sourceStartMs, requestedStartMs);
   const endMs = Math.min(sourceEnd, candidate.sourceEndMs + options.tailPaddingMs);
   const segment: EditSegment = {
     id: "clip-001",
@@ -552,7 +579,7 @@ function renderInventory(options: ResolvedContentPackageOptions, storyCandidates
     "3. Inspect `review/content-inventory.md`, `analysis/story-candidates.json`, and `analysis/story-selection.md`.",
     "4. Run `agent-cutroom shortform-pacing <project>`, then use `cutroom-cut-review` to approve or patch risky boundaries.",
     "5. Run `agent-cutroom render <project>` only after the selected story and reviewed cuts are acceptable.",
-    "6. Run `agent-cutroom caption <project>`, `agent-cutroom verify <project>`, and `agent-cutroom social-package <project> --platform linkedin` for a publishable package.",
+    "6. Run `agent-cutroom caption <project>`, `agent-cutroom verify <project>`, and `agent-cutroom social-package <project> --platform linkedin` for a platform-matched publishable package.",
     "",
   );
 

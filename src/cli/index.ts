@@ -10,6 +10,7 @@ import {
   createProject,
   editPlanPath,
   highlightCandidatesPath,
+  platformExportPlanPath,
   readManifest,
   readTimeline,
   shortFormPacingPath,
@@ -48,6 +49,7 @@ import {
 import { findMoments } from "../core/find-moments.js";
 import { verifyRender } from "../core/verify.js";
 import { createSocialPackage } from "../core/social-package.js";
+import { defaultPlatformExportPath, exportPlatformRender } from "../core/platform-export.js";
 import { createOtioTimeline } from "../core/otio.js";
 import {
   loadContentProfile,
@@ -761,21 +763,44 @@ program
   .argument("<project>", "Project directory")
   .option("--platform <platform>", "instagram|tiktok|youtube-shorts|linkedin", "instagram")
   .option("--render <path>", "Render path to package, relative to project")
+  .option("--no-platform-export", "Do not create a platform-matched render before packaging")
+  .option("--platform-out <path>", "Platform-matched render output path, relative to project")
   .option("--candidate <id>", "Highlight candidate id to package")
   .option("--title <title>", "Override package title")
-  .description("Create a platform style pack, cover frame, post copy, and social-package.json.")
+  .description("Create a platform-matched render, style pack, cover frame, post copy, and social-package.json.")
   .action(
     async (
       project: string,
-      options: { platform: string; render?: string; candidate?: string; title?: string },
+      options: {
+        platform: string;
+        render?: string;
+        platformExport?: boolean;
+        platformOut?: string;
+        candidate?: string;
+        title?: string;
+      },
     ) => {
       const platform = PlatformSchema.parse(options.platform);
       const timeline = await readTimeline(project);
-      const renderPath =
+      const sourceRenderPath =
         options.render ??
         ((await relativePathExists(project, "renders/captioned.mp4"))
           ? "renders/captioned.mp4"
           : "renders/rough-cut.mp4");
+      let renderPath = sourceRenderPath;
+      if (options.platformExport !== false) {
+        const exportPlan = await exportPlatformRender({
+          projectDir: project,
+          platform,
+          sourcePath: sourceRenderPath,
+          outputPath: options.platformOut ?? defaultPlatformExportPath(platform),
+        });
+        await writeJson(platformExportPlanPath(project), exportPlan);
+        renderPath = exportPlan.outputPath;
+        console.log(exportPlan.skipped ? `platform export skipped ${renderPath}` : `platform export ${renderPath}`);
+        console.log(`platform export plan ${platformExportPlanPath(project)}`);
+        for (const warning of exportPlan.warnings) console.log(`warning: ${warning}`);
+      }
       const candidates = await readJson(highlightCandidatesPath(project), HighlightCandidatesSchema).catch(
         () => null,
       );
@@ -798,6 +823,28 @@ program
       for (const warning of socialPackage.warnings) console.log(`warning: ${warning}`);
     },
   );
+
+program
+  .command("platform-export")
+  .argument("<project>", "Project directory")
+  .requiredOption("--platform <platform>", "instagram|tiktok|youtube-shorts|linkedin")
+  .option("--target <path>", "Source render path, relative to project", "renders/captioned.mp4")
+  .option("--out <path>", "Platform-matched render output path, relative to project")
+  .description("Export a render so dimensions, fps, codecs, and bitrates match a platform style pack.")
+  .action(async (project: string, options: { platform: string; target: string; out?: string }) => {
+    const platform = PlatformSchema.parse(options.platform);
+    const exportPlan = await exportPlatformRender({
+      projectDir: project,
+      platform,
+      sourcePath: options.target,
+      outputPath: options.out ?? defaultPlatformExportPath(platform),
+    });
+    await writeJson(platformExportPlanPath(project), exportPlan);
+    console.log(exportPlan.skipped ? `platform export skipped ${exportPlan.outputPath}` : `exported ${exportPlan.outputPath}`);
+    console.log(`plan ${platformExportPlanPath(project)}`);
+    for (const warning of exportPlan.warnings) console.log(`warning: ${warning}`);
+    if (exportPlan.warnings.length > 0) process.exitCode = 1;
+  });
 
 program
   .command("export-otio")

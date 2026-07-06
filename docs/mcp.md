@@ -17,7 +17,7 @@ bun dist/mcp/server.js
 
 ## Tools
 
-The server exposes 15 always-visible tools:
+The server exposes 16 always-visible tools:
 
 - `doctor`
 - `init_project`
@@ -31,6 +31,7 @@ The server exposes 15 always-visible tools:
 - `grade_apply`
 - `caption`
 - `verify`
+- `platform_export`
 - `social_package`
 - `export_otio`
 - `hyperframes_brief`
@@ -52,6 +53,7 @@ Tools return `cutroom://artifact/{token}` resource links for project artifacts s
 - `plans/short-form-pacing.json`
 - `plans/color-grade.json`
 - `plans/caption-plan.json`
+- `plans/platform-export.json`
 - `renders/verify-report.json`
 - `plans/social-package.json`
 - `exports/edit.otio`

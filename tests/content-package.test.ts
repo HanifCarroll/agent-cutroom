@@ -16,6 +16,11 @@ export const contentPackageTimeline: Timeline = {
     width: 2160,
     height: 3840,
     fps: 60,
+    videoCodec: "hevc",
+    audioCodec: "aac",
+    videoBitrateBps: 75_000_000,
+    audioBitrateBps: 192_000,
+    overallBitrateBps: 75_192_000,
     hasAudio: true,
     hasVideo: true,
     sizeBytes: 1000,
@@ -120,6 +125,50 @@ describe("content package", () => {
 
     expect(one.selectedCandidate?.id).toBe(many.selectedCandidate?.id);
     expect(one.selectedCandidate?.id).toMatch(/^story-\d{9}-\d{9}$/);
+  });
+
+  it("does not let lead padding pull prior sentence words into the selected edit", () => {
+    const timeline: Timeline = {
+      ...contentPackageTimeline,
+      transcriptSegments: [
+        {
+          id: "seg-before",
+          startMs: 0,
+          endMs: 1_000,
+          text: "Whatever it is that you're doing.",
+          words: [
+            { id: "before-1", startMs: 100, endMs: 400, text: "Whatever", probability: 0.99 },
+            { id: "before-2", startMs: 400, endMs: 600, text: "it", probability: 0.99 },
+            { id: "before-3", startMs: 600, endMs: 1_000, text: "doing.", probability: 0.99 },
+          ],
+        },
+        {
+          id: "seg-clean",
+          startMs: 1_200,
+          endMs: 42_000,
+          text: "So in sales, you need to have a very specific paid media agency profile. The point is to understand the client and create a consulting offer that helps agencies trust their reporting and improve execution.",
+          words: [{ id: "clean-1", startMs: 1_200, endMs: 1_400, text: "So", probability: 0.99 }],
+        },
+      ],
+    };
+
+    const result = buildContentPackage({
+      timeline,
+      sourcePath: "source/source.mov",
+      title: "Clean Start Test",
+      recipe: TALKING_HEAD_STORY_RECIPE,
+      profile: HANIF_CONTENT_PROFILE,
+      targetDurationMs: 42_000,
+      minDurationMs: 30_000,
+      maxDurationMs: 60_000,
+      maxCandidates: 2,
+      selectedId: "story-000001200-000042000",
+      leadPaddingMs: 800,
+      tailPaddingMs: 0,
+    });
+
+    expect(result.editPlan?.segments[0]?.sourceStartMs).toBe(1_000);
+    expect(result.editPlan?.segments[0]?.sourceStartMs).toBeGreaterThan(400);
   });
 
   it("fails loudly when a forced selection is missing", () => {
