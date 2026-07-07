@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cutroom B-Roll Research"
+  short_description: "Plan and source support assets"
+  default_prompt: "Use -broll-research to plan and source B-roll for this Agent Cutroom edit."

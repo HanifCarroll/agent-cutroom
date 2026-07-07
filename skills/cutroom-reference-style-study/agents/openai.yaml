@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cutroom Reference Style Study"
+  short_description: "Extract reusable edit styles"
+  default_prompt: "Use -reference-style-study to analyze these reference clips into a reusable editing style."

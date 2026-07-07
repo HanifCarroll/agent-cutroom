@@ -2,7 +2,7 @@
 
 Agent Cutroom gives ChatGPT Codex and other coding agents a local toolbelt for video review and editing.
 
-The agent makes the editorial decisions. The CLI handles deterministic media work: probing videos, generating/importing timestamped transcripts through `transcribe-audio`, detecting silence, extracting frames/contact sheets, writing review packs, recording agent observations, finding candidate moments, creating edit plans, rendering rough cuts, burning word-timed captions, verifying renders, packaging social outputs, exporting OTIO, and preparing HyperFrames briefs.
+The agent makes the editorial decisions. The CLI handles deterministic media work: probing videos, generating/importing timestamped transcripts through `transcribe-audio`, detecting silence, extracting frames/contact sheets, writing review packs, recording agent observations, finding candidate moments, creating edit plans, rendering rough cuts, burning word-timed captions, verifying renders, packaging social outputs, generating and mixing AI music cues, exporting OTIO, and preparing HyperFrames briefs.
 
 ## Why This Exists
 
@@ -14,14 +14,20 @@ raw video + transcript
   -> transcript/raw txt+json
   -> frames/contact-sheets
   -> review/review-pack.md
+  -> review/content-inventory.md
   -> agent observations
   -> analysis/highlight-candidates.json
+  -> analysis/story-candidates.json
+  -> analysis/story-selection.md
   -> edit-plan.json
   -> renders/rough-cut.mp4
   -> captions/captions.ass
   -> renders/captioned.mp4
   -> renders/verify-report.json
   -> plans/social-package.json
+  -> plans/music-generation.json
+  -> assets/music/
+  -> plans/music-mix.json
   -> exports/edit.otio
   -> HyperFrames polish pass
 ```
@@ -33,6 +39,8 @@ This is designed for workflows where Codex is the editor/producer and needs tool
 - Bun 1.3+
 - FFmpeg and ffprobe on `PATH`
 - Optional for generated transcripts: [`transcribe-audio`](https://github.com/HanifCarroll/transcribe-audio) on `PATH`
+- Optional for stock B-roll: `PEXELS_API_KEY` in the environment or `~/.config/agent-cutroom/secrets.env`
+- Optional for AI music: `SUNO_API_KEY` or `EVOLINK_API_KEY` in the environment or `~/.config/agent-cutroom/secrets.env`
 
 Check your machine:
 
@@ -41,6 +49,22 @@ bun install
 bun run build
 bun dist/cli/index.js doctor
 ```
+
+Agent Cutroom automatically loads local secrets from:
+
+```sh
+~/.config/agent-cutroom/secrets.env
+```
+
+For example:
+
+```sh
+PEXELS_API_KEY=...
+SUNO_API_KEY=...
+# or EVOLINK_API_KEY=...
+```
+
+Already-exported environment variables take precedence. Set `AGENT_CUTROOM_SECRETS_FILE` to point at a different secrets file.
 
 ## Quick Start
 
@@ -52,6 +76,28 @@ bun dist/cli/index.js init ./input.mp4 --transcript ./transcript.json --out ./my
 bun dist/cli/index.js prepare ./my-cut
 open ./my-cut/review/review-pack.md
 ```
+
+For Hanif's own talking-head videos, use the opinionated content package path:
+
+```sh
+bun dist/cli/index.js init ./input.mov \
+  --transcript ./transcript.json \
+  --out ./my-cut \
+  --title "First Tripod Video" \
+  --link-source
+bun dist/cli/index.js prepare ./my-cut
+bun dist/cli/index.js hanif-content-package ./my-cut
+open ./my-cut/review/content-inventory.md
+open ./my-cut/analysis/story-selection.md
+bun dist/cli/index.js render ./my-cut
+bun dist/cli/index.js caption ./my-cut
+bun dist/cli/index.js verify ./my-cut
+bun dist/cli/index.js social-package ./my-cut --platform linkedin
+```
+
+`hanif-content-package` is intentionally narrow. It ranks source-backed story moments for Hanif's consulting, content, software, workflow, and public-building themes; writes `review/content-inventory.md`, `analysis/story-candidates.json`, and `analysis/story-selection.md`; then writes `edit-plan.json` for the selected clip.
+
+See [docs/hanif-content-package.md](docs/hanif-content-package.md) for the repeatable workflow and dogfood quality gates.
 
 Or generate the transcript locally with the transcription-to-vault workbench:
 
@@ -93,6 +139,20 @@ bun dist/cli/index.js social-package ./my-cut --platform instagram
 bun dist/cli/index.js export-otio ./my-cut
 ```
 
+Generate and mix an optional AI music bed:
+
+```sh
+bun dist/cli/index.js music submit ./my-cut \
+  --prompt-file plans/music-prompt.txt \
+  --style "warm minimal electronic, soft pulse, 92 bpm" \
+  --title "Cutroom Cue"
+bun dist/cli/index.js music poll ./my-cut --download
+bun dist/cli/index.js music mix ./my-cut \
+  --track assets/music/track-001.mp3 \
+  --target renders/captioned.mp4 \
+  --out renders/with-music.mp4
+```
+
 Generate a HyperFrames brief for the polish pass:
 
 ```sh
@@ -103,7 +163,7 @@ bun dist/cli/index.js hyperframes-brief ./my-cut
 
 ```txt
 agent-cutroom doctor
-agent-cutroom init <video> --out <dir> [--transcript <path>] [--title <title>]
+agent-cutroom init <video> --out <dir> [--transcript <path>] [--title <title>] [--link-source]
 agent-cutroom probe <project>
 agent-cutroom transcribe <project> [--backend mlx-whisper] [--model large-v3] [--vault-note <path>]
 agent-cutroom transcript <project>
@@ -115,9 +175,13 @@ agent-cutroom observe <project> --window <id> --summary <text>
 agent-cutroom plan <project>
 agent-cutroom render <project>
 agent-cutroom find-moments <project>
+agent-cutroom hanif-content-package <project>
 agent-cutroom caption <project>
 agent-cutroom verify <project>
 agent-cutroom social-package <project>
+agent-cutroom music submit <project> --prompt <text>|--prompt-file <path>
+agent-cutroom music poll <project> [--download]
+agent-cutroom music mix <project> --track <path> [--target <path>] [--out <path>]
 agent-cutroom export-otio <project>
 agent-cutroom hyperframes-brief <project>
 ```
@@ -132,7 +196,7 @@ cp skills/agent-cutroom/SKILL.md ~/.codex/skills/agent-cutroom/SKILL.md
 export CUTROOM_DIR="$PWD"
 ```
 
-The skill keeps the workflow predictable: initialize a project, generate or import transcript metadata, prepare frames/contact sheets, record agent observations, plan and render rough cuts, then hand off to HyperFrames or caption rendering only after the rough cut exists.
+The skill keeps the workflow predictable: initialize a project, generate or import transcript metadata, prepare frames/contact sheets, record agent observations, plan and render rough cuts, then hand off to captions, music, HyperFrames, or release review only after the rough cut exists.
 
 ## Transcript Format
 
@@ -193,7 +257,7 @@ HyperFrames fits after the rough cut, when the agent wants a polished compositio
 
 ## Artifact Contract
 
-See [docs/artifact-contract.md](docs/artifact-contract.md) for the project file contract, including transcript words, highlight candidates, caption plans, social packages, verification reports, and OTIO exports.
+See [docs/artifact-contract.md](docs/artifact-contract.md) for the project file contract, including transcript words, highlight candidates, caption plans, social packages, music generation and mix plans, verification reports, and OTIO exports.
 
 ## MCP Server
 
@@ -244,4 +308,4 @@ bun run build
 
 ## Status
 
-This is an early public prototype. The stable contract is the file-based workflow: `cutroom.json`, `timeline.json`, `review/review-pack.md`, `analysis/highlight-candidates.json`, `edit-plan.json`, `plans/caption-plan.json`, `plans/social-package.json`, `renders/verify-report.json`, `exports/edit.otio`, and rendered outputs.
+This is an early public prototype. The stable contract is the file-based workflow: `cutroom.json`, `timeline.json`, `review/review-pack.md`, `analysis/highlight-candidates.json`, `edit-plan.json`, `plans/caption-plan.json`, `plans/social-package.json`, `plans/music-generation.json`, `plans/music-mix.json`, `renders/verify-report.json`, `exports/edit.otio`, and rendered outputs.

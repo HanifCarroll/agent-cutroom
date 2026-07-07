@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cutroom Music Director"
+  short_description: "Plan AI music for video edits"
+  default_prompt: "Use $cutroom-music-director to generate a music brief for this Agent Cutroom video."

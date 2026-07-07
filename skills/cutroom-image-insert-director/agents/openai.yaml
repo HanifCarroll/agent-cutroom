@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cutroom Image Insert Director"
+  short_description: "Direct image inserts for video"
+  default_prompt: "Use -image-insert-director to plan image and infographic inserts for this edit."

@@ -17,7 +17,7 @@ bun dist/mcp/server.js
 
 ## Tools
 
-The server exposes 11 always-visible tools:
+The server exposes 14 always-visible tools:
 
 - `doctor`
 - `init_project`
@@ -28,6 +28,9 @@ The server exposes 11 always-visible tools:
 - `caption`
 - `verify`
 - `social_package`
+- `music_submit`
+- `music_poll`
+- `music_mix`
 - `export_otio`
 - `hyperframes_brief`
 
@@ -45,6 +48,8 @@ Tools return `cutroom://artifact/{token}` resource links for project artifacts s
 - `plans/caption-plan.json`
 - `renders/verify-report.json`
 - `plans/social-package.json`
+- `plans/music-generation.json`
+- `plans/music-mix.json`
 - `exports/edit.otio`
 - `hyperframes/brief.md`
 

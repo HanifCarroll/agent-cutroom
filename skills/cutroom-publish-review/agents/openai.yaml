@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cutroom Publish Review"
+  short_description: "QA social video before publish"
+  default_prompt: "Use -publish-review to QA this final social video before publishing."

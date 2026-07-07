@@ -7,7 +7,10 @@ import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mc
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import * as z from "zod/v4";
+import { loadRuntimeEnv } from "../core/env.js";
 import { runCommand } from "../core/process.js";
+
+await loadRuntimeEnv();
 
 const server = new McpServer({
   name: "agent-cutroom",
@@ -316,6 +319,101 @@ server.registerTool(
     return toolResult(await callCli(args), [
       artifactLink(project, "plans/social-package.json", "Social package manifest"),
       artifactLink(project, "release/post-copy.md", "Post copy"),
+    ]);
+  },
+);
+
+server.registerTool(
+  "music_submit",
+  {
+    title: "Submit Music Generation",
+    description:
+      "Use `music_submit` to submit a Suno-compatible async music generation task and write plans/music-generation.json. Requires SUNO_API_KEY or EVOLINK_API_KEY.",
+    inputSchema: {
+      project: ProjectArg,
+      prompt: z.string().optional(),
+      promptFile: z.string().optional(),
+      style: z.string().optional(),
+      title: z.string().optional(),
+      negativeTags: z.string().optional(),
+      model: z.string().optional(),
+      baseUrl: z.string().optional(),
+      provider: z.enum(["evolink", "custom"]).default("evolink"),
+      customMode: z.boolean().default(false),
+      withVocals: z.boolean().default(false),
+    },
+    outputSchema: { status: z.string(), text: z.string(), resources: z.array(z.object({ uri: z.string(), name: z.string() })) },
+    annotations: { readOnlyHint: false, openWorldHint: true },
+  },
+  async ({ project, prompt, promptFile, style, title, negativeTags, model, baseUrl, provider, customMode, withVocals }) => {
+    const args = ["music", "submit", project, "--provider", provider];
+    if (prompt) args.push("--prompt", prompt);
+    if (promptFile) args.push("--prompt-file", promptFile);
+    if (style) args.push("--style", style);
+    if (title) args.push("--title", title);
+    if (negativeTags) args.push("--negative-tags", negativeTags);
+    if (model) args.push("--model", model);
+    if (baseUrl) args.push("--base-url", baseUrl);
+    if (customMode) args.push("--custom-mode");
+    if (withVocals) args.push("--with-vocals");
+    return toolResult(await callCli(args), [
+      artifactLink(project, "plans/music-generation.json", "Music generation manifest"),
+    ]);
+  },
+);
+
+server.registerTool(
+  "music_poll",
+  {
+    title: "Poll Music Generation",
+    description:
+      "Use `music_poll` to poll a Suno-compatible music generation task and optionally download completed tracks into assets/music.",
+    inputSchema: {
+      project: ProjectArg,
+      task: z.string().optional(),
+      download: z.boolean().default(false),
+    },
+    outputSchema: { status: z.string(), text: z.string(), resources: z.array(z.object({ uri: z.string(), name: z.string() })) },
+    annotations: { readOnlyHint: false, openWorldHint: true },
+  },
+  async ({ project, task, download }) => {
+    const args = ["music", "poll", project];
+    if (task) args.push("--task", task);
+    if (download) args.push("--download");
+    return toolResult(await callCli(args), [
+      artifactLink(project, "plans/music-generation.json", "Music generation manifest"),
+    ]);
+  },
+);
+
+server.registerTool(
+  "music_mix",
+  {
+    title: "Mix Music Under Render",
+    description:
+      "Use `music_mix` to mix a local music cue under a rendered video and write plans/music-mix.json.",
+    inputSchema: {
+      project: ProjectArg,
+      track: z.string(),
+      target: z.string().optional(),
+      out: z.string().optional(),
+      volume: z.number().positive().optional(),
+      fadeIn: z.number().nonnegative().optional(),
+      fadeOut: z.number().nonnegative().optional(),
+    },
+    outputSchema: { status: z.string(), text: z.string(), resources: z.array(z.object({ uri: z.string(), name: z.string() })) },
+    annotations: { readOnlyHint: false, openWorldHint: false },
+  },
+  async ({ project, track, target, out, volume, fadeIn, fadeOut }) => {
+    const args = ["music", "mix", project, "--track", track];
+    if (target) args.push("--target", target);
+    if (out) args.push("--out", out);
+    if (volume !== undefined) args.push("--volume", String(volume));
+    if (fadeIn !== undefined) args.push("--fade-in", String(fadeIn));
+    if (fadeOut !== undefined) args.push("--fade-out", String(fadeOut));
+    return toolResult(await callCli(args), [
+      artifactLink(project, "plans/music-mix.json", "Music mix plan"),
+      artifactLink(project, out ?? "renders/with-music.mp4", "Music mix render"),
     ]);
   },
 );

@@ -42,6 +42,12 @@ With a timestamped transcript:
 cutroom init "$VIDEO" --transcript "$TRANSCRIPT_JSON" --out "$PROJECT" --title "$TITLE"
 ```
 
+For Hanif's large Apple Photos originals, add `--link-source` to avoid duplicating the full source media into the Cutroom project:
+
+```sh
+cutroom init "$VIDEO" --transcript "$TRANSCRIPT_JSON" --out "$PROJECT" --title "$TITLE" --link-source
+```
+
 Without a transcript:
 
 ```sh
@@ -59,7 +65,24 @@ cutroom prepare "$PROJECT"
 
 Open `review/review-pack.md` and the referenced contact sheet. Inspect the frame images yourself. Finish this step when the transcript, silence ranges, visual state, and useful or unusable sections are understood.
 
-4. Record observations.
+4. For Hanif's own talking-head content, run the narrow content package pass.
+
+Use this by default for Hanif tripod videos, walk-style videos, raw thinking recordings, consulting/content/software videos, and videos meant to become writing, clips, vault notes, or tasks.
+
+```sh
+cutroom hanif-content-package "$PROJECT" --target-seconds 75 --max 8
+```
+
+This writes:
+
+- `review/content-inventory.md`
+- `analysis/story-candidates.json`
+- `analysis/story-selection.md`
+- `edit-plan.json` for the selected story
+
+Inspect the inventory and selection before rendering. The pass is tuned for Hanif's current themes: consulting for paid-media agencies, Codex as an operating system, raw thinking into content, public software proof, speaking confidence, and task-graph effectiveness.
+
+5. Record observations.
 
 For each review window that matters:
 
@@ -75,7 +98,7 @@ cutroom observe "$PROJECT" \
 
 Use `--editing-use keep|tighten|cut|broll` and `--broll none|low|medium|high`. Finish this step when every editorial decision the plan will rely on is recorded in `timeline.json`.
 
-5. Find candidate moments.
+6. Find candidate moments.
 
 ```sh
 cutroom find-moments "$PROJECT" --objective "$OBJECTIVE" --target-seconds "$TARGET_SECONDS"
@@ -83,7 +106,7 @@ cutroom find-moments "$PROJECT" --objective "$OBJECTIVE" --target-seconds "$TARG
 
 Inspect `analysis/highlight-candidates.json` before selecting a clip or trusting a recommendation.
 
-6. Plan and render.
+7. Plan and render.
 
 ```sh
 cutroom plan "$PROJECT"
@@ -92,18 +115,23 @@ cutroom render "$PROJECT"
 
 Inspect `edit-plan.json` before trusting the render. Verify the output with `ffprobe` and a visual preview. Finish this step when `renders/rough-cut.mp4` exists and the rendered cut matches the recorded observations.
 
-7. Caption, verify, package, and export as needed.
+8. Caption, verify, package, add music, and export as needed.
 
 ```sh
 cutroom caption "$PROJECT"
 cutroom verify "$PROJECT"
 cutroom social-package "$PROJECT" --platform instagram
+cutroom music submit "$PROJECT" --prompt-file plans/music-prompt.txt
+cutroom music poll "$PROJECT" --download
+cutroom music mix "$PROJECT" --track assets/music/track-001.mp3 --target renders/captioned.mp4
 cutroom export-otio "$PROJECT"
 ```
 
 Use `caption` only when real word timings exist. It writes `plans/caption-plan.json`, `captions/captions.ass`, and, by default, `renders/captioned.mp4`.
 
-8. Polish after the rough cut is real.
+Use `music` only when the video needs a cue. It writes `plans/music-generation.json`, downloads tracks under `assets/music/`, and writes `plans/music-mix.json` when a cue is mixed under a render.
+
+9. Polish after the rough cut is real.
 
 ```sh
 cutroom hyperframes-brief "$PROJECT"
@@ -116,12 +144,18 @@ Use `hyperframes/brief.md` as context for a later polish pass with captions, tit
 Use the focused skills when available:
 
 - `cutroom-review`
+- `cutroom-story-selector`
+- `cutroom-reference-style-study`
 - `cutroom-rough-cut`
 - `cutroom-captions`
+- `cutroom-broll-research`
+- `cutroom-image-insert-director`
 - `cutroom-social-package`
+- `cutroom-music-director`
 - `cutroom-hyperframes-polish`
 - `cutroom-release`
+- `cutroom-publish-review`
 
 ## Completion
 
-Finish only when the requested video artifact exists, the source project folder contains the metadata that produced it, visual decisions are recorded as observations, transcript provenance is preserved, and verification results are reported with paths.
+Finish only when the requested video artifact exists, the source project folder contains the metadata that produced it, visual decisions are recorded as observations, transcript and generated-asset provenance are preserved, and verification results are reported with paths.

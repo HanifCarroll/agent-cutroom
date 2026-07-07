@@ -1,16 +1,21 @@
 #!/usr/bin/env bun
 import { Command } from "commander";
-import { mkdir, stat } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { mkdir, readFile, stat } from "node:fs/promises";
+import { isAbsolute, join, resolve } from "node:path";
 import { commandExists, runCommand } from "../core/process.js";
 import {
   captionPlanPath,
+  contentInventoryPath,
   createProject,
   editPlanPath,
   highlightCandidatesPath,
+  musicGenerationPath,
+  musicMixPath,
   readManifest,
   readTimeline,
   socialPackagePath,
+  storyCandidatesPath,
+  storySelectionPath,
   writeTimeline,
 } from "../core/project.js";
 import { loadTranscript } from "../core/transcript.js";
@@ -27,6 +32,7 @@ import { writeJson, readJson } from "../core/files.js";
 import {
   EditPlanSchema,
   HighlightCandidatesSchema,
+  MusicProviderSchema,
   PlatformSchema,
   type Observation,
 } from "../core/schema.js";
@@ -44,6 +50,11 @@ import { findMoments } from "../core/find-moments.js";
 import { verifyRender } from "../core/verify.js";
 import { createSocialPackage } from "../core/social-package.js";
 import { createOtioTimeline } from "../core/otio.js";
+import { loadRuntimeEnv } from "../core/env.js";
+import { createMusicMix, pollMusicGeneration, submitMusicGeneration } from "../core/music.js";
+import { readHanifStoryCandidates, writeHanifContentPackage } from "../core/hanif-content-package.js";
+
+await loadRuntimeEnv();
 
 const program = new Command();
 
@@ -72,6 +83,10 @@ async function relativePathExists(project: string, relativePath: string): Promis
   }
 }
 
+async function readProjectText(project: string, path: string): Promise<string> {
+  return readFile(isAbsolute(path) ? path : resolve(project, path), "utf8");
+}
+
 program.command("doctor").description("Check local media and transcript dependencies.").action(async () => {
   const [ffmpeg, ffprobe, transcribeAudio] = await Promise.all([
     commandExists("ffmpeg"),
@@ -83,6 +98,14 @@ program.command("doctor").description("Check local media and transcript dependen
   console.log(
     `transcribe-audio: ${transcribeAudio ? "ok" : "missing"} (required for the transcribe command)`,
   );
+  console.log(
+    `pexels: ${process.env.PEXELS_API_KEY ? "configured" : "missing"} (optional for B-roll asset search)`,
+  );
+  console.log(
+    `suno: ${
+      process.env.SUNO_API_KEY || process.env.EVOLINK_API_KEY ? "configured" : "missing"
+    } (optional for AI music generation)`,
+  );
   if (!ffmpeg || !ffprobe) process.exitCode = 1;
 });
 
@@ -92,13 +115,15 @@ program
   .requiredOption("-o, --out <dir>", "Project output directory")
   .option("-t, --transcript <path>", "Timestamped transcript JSON")
   .option("--title <title>", "Project title")
+  .option("--link-source", "Symlink source media instead of copying it")
   .description("Create an Agent Cutroom project folder.")
-  .action(async (video: string, options: { out: string; transcript?: string; title?: string }) => {
+  .action(async (video: string, options: { out: string; transcript?: string; title?: string; linkSource?: boolean }) => {
     const manifest = await createProject({
       videoPath: video,
       transcriptPath: options.transcript,
       outDir: options.out,
       title: options.title,
+      linkSource: Boolean(options.linkSource),
     });
     console.log(`created ${resolve(options.out)}`);
     console.log(`source ${manifest.sourcePath}`);
@@ -419,6 +444,62 @@ program
   );
 
 program
+  .command("hanif-content-package")
+  .argument("<project>", "Project directory")
+  .option("--objective <text>", "Selection objective")
+  .option("--target-seconds <seconds>", "Target selected clip duration in seconds", "75")
+  .option("--min-seconds <seconds>", "Minimum candidate duration in seconds", "35")
+  .option("--max-seconds <seconds>", "Maximum candidate duration in seconds", "125")
+  .option("--max <count>", "Maximum story candidates to keep", "8")
+  .option("--select <id>", "Force a specific story candidate id when rewriting the edit plan")
+  .option("--lead-padding-ms <ms>", "Source padding before selected story", "800")
+  .option("--tail-padding-ms <ms>", "Source padding after selected story", "1200")
+  .description("Create Hanif's source-backed talking-head content inventory, story selection, and clip edit plan.")
+  .action(
+    async (
+      project: string,
+      options: {
+        objective?: string;
+        targetSeconds: string;
+        minSeconds: string;
+        maxSeconds: string;
+        max: string;
+        select?: string;
+        leadPaddingMs: string;
+        tailPaddingMs: string;
+      },
+    ) => {
+      const manifest = await readManifest(project);
+      const timeline = await readTimeline(project);
+      const result = await writeHanifContentPackage({
+        projectDir: project,
+        timeline,
+        sourcePath: manifest.sourcePath,
+        title: manifest.title,
+        objective: options.objective,
+        targetDurationMs: Math.max(1000, Math.round(Number(options.targetSeconds) * 1000)),
+        minDurationMs: Math.max(1000, Math.round(Number(options.minSeconds) * 1000)),
+        maxDurationMs: Math.max(1000, Math.round(Number(options.maxSeconds) * 1000)),
+        maxCandidates: Math.max(1, Number(options.max)),
+        selectedId: options.select,
+        leadPaddingMs: Math.max(0, Number(options.leadPaddingMs)),
+        tailPaddingMs: Math.max(0, Number(options.tailPaddingMs)),
+      });
+      console.log(`wrote ${result.storyCandidates.candidates.length} story candidates`);
+      console.log(`inventory ${contentInventoryPath(project)}`);
+      console.log(`candidates ${storyCandidatesPath(project)}`);
+      console.log(`selection ${storySelectionPath(project)}`);
+      if (result.editPlan) console.log(`edit plan ${editPlanPath(project)}`);
+      if (result.selectedCandidate) {
+        console.log(
+          `selected ${result.selectedCandidate.id}: ${result.selectedCandidate.timestamp} score=${result.selectedCandidate.score.toFixed(3)} ${result.selectedCandidate.title}`,
+        );
+      }
+      for (const warning of result.storyCandidates.warnings) console.log(`warning: ${warning}`);
+    },
+  );
+
+program
   .command("caption")
   .argument("<project>", "Project directory")
   .option("--target <path>", "Media path to caption, relative to project", "renders/rough-cut.mp4")
@@ -532,6 +613,7 @@ program
       const candidates = await readJson(highlightCandidatesPath(project), HighlightCandidatesSchema).catch(
         () => null,
       );
+      const storyCandidates = await readHanifStoryCandidates(project);
       const socialPackage = await createSocialPackage({
         projectDir: project,
         timeline,
@@ -539,6 +621,7 @@ program
         renderPath,
         candidateId: options.candidate,
         candidates,
+        storyCandidates,
         title: options.title,
       });
       await writeJson(socialPackagePath(project), socialPackage);
@@ -547,6 +630,121 @@ program
       if (socialPackage.coverFramePath) console.log(`cover ${resolve(project, socialPackage.coverFramePath)}`);
       console.log(`post ${resolve(project, socialPackage.postCopyPath)}`);
       for (const warning of socialPackage.warnings) console.log(`warning: ${warning}`);
+    },
+  );
+
+const music = program.command("music").description("Generate, poll, download, and mix AI music cues.");
+
+music
+  .command("submit")
+  .argument("<project>", "Project directory")
+  .option("--prompt <text>", "Music generation prompt")
+  .option("--prompt-file <path>", "Prompt file path, absolute or relative to the project")
+  .option("--style <tags>", "Comma-separated style tags")
+  .option("--title <title>", "Track title")
+  .option("--negative-tags <tags>", "Comma-separated styles to avoid")
+  .option("--callback-url <url>", "Optional provider callback URL")
+  .option("--model <model>", "Suno-compatible model; defaults to SUNO_MODEL or suno-v5-beta")
+  .option("--base-url <url>", "Provider base URL; defaults to SUNO_API_BASE_URL, EVOLINK_API_BASE_URL, or https://api.evolink.ai")
+  .option("--provider <provider>", "evolink|custom", "evolink")
+  .option("--custom-mode", "Enable provider custom mode", false)
+  .option("--with-vocals", "Allow vocals instead of instrumental-only", false)
+  .description("Submit a Suno-compatible async music generation task and write plans/music-generation.json.")
+  .action(
+    async (
+      project: string,
+      options: {
+        prompt?: string;
+        promptFile?: string;
+        style?: string;
+        title?: string;
+        negativeTags?: string;
+        callbackUrl?: string;
+        model?: string;
+        baseUrl?: string;
+        provider: string;
+        customMode: boolean;
+        withVocals: boolean;
+      },
+    ) => {
+      const prompt = options.prompt ?? (options.promptFile ? await readProjectText(project, options.promptFile) : null);
+      if (!prompt?.trim()) {
+        throw new Error("music submit requires --prompt or --prompt-file.");
+      }
+      const generation = await submitMusicGeneration(project, {
+        provider: MusicProviderSchema.parse(options.provider),
+        baseUrl: options.baseUrl,
+        model: options.model,
+        prompt: prompt.trim(),
+        style: options.style,
+        title: options.title,
+        negativeTags: options.negativeTags,
+        callbackUrl: options.callbackUrl,
+        customMode: options.customMode,
+        instrumental: !options.withVocals,
+      });
+      console.log(`submitted ${generation.taskId}`);
+      console.log(`status ${generation.status}`);
+      console.log(`manifest ${musicGenerationPath(project)}`);
+    },
+  );
+
+music
+  .command("poll")
+  .argument("<project>", "Project directory")
+  .option("--task <id>", "Override task id; defaults to plans/music-generation.json")
+  .option("--download", "Download completed track URLs into assets/music", false)
+  .description("Poll a Suno-compatible music generation task and optionally download results.")
+  .action(async (project: string, options: { task?: string; download: boolean }) => {
+    const generation = await pollMusicGeneration(project, {
+      taskId: options.task,
+      download: options.download,
+    });
+    console.log(`task ${generation.taskId}`);
+    console.log(`status ${generation.status}`);
+    if (generation.progress !== null) console.log(`progress ${generation.progress}`);
+    console.log(`tracks ${generation.tracks.length}`);
+    for (const track of generation.tracks) {
+      console.log(`${track.id}: ${track.localPath ?? track.audioUrl ?? "no audio url"}`);
+    }
+    for (const warning of generation.warnings) console.log(`warning: ${warning}`);
+    console.log(`manifest ${musicGenerationPath(project)}`);
+  });
+
+music
+  .command("mix")
+  .argument("<project>", "Project directory")
+  .requiredOption("--track <path>", "Music file path, relative to project or absolute")
+  .option("--target <path>", "Video render to mix under, relative to project", "renders/captioned.mp4")
+  .option("--out <path>", "Mixed output path, relative to project", "renders/with-music.mp4")
+  .option("--volume <number>", "Music volume multiplier", "0.14")
+  .option("--fade-in <seconds>", "Music fade-in seconds", "0.6")
+  .option("--fade-out <seconds>", "Music fade-out seconds", "1.2")
+  .description("Mix a downloaded music cue under a video render and write plans/music-mix.json.")
+  .action(
+    async (
+      project: string,
+      options: {
+        track: string;
+        target: string;
+        out: string;
+        volume: string;
+        fadeIn: string;
+        fadeOut: string;
+      },
+    ) => {
+      const trackPath = isAbsolute(options.track) ? options.track : options.track;
+      const mix = await createMusicMix(project, {
+        targetPath: options.target,
+        trackPath,
+        outputPath: options.out,
+        musicVolume: Number(options.volume),
+        fadeInSeconds: Number(options.fadeIn),
+        fadeOutSeconds: Number(options.fadeOut),
+      });
+      console.log(`mixed ${resolve(project, mix.outputPath)}`);
+      console.log(`plan ${musicMixPath(project)}`);
+      for (const warning of mix.warnings) console.log(`warning: ${warning}`);
     },
   );
 

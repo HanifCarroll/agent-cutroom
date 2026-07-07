@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cutroom Story Selector"
+  short_description: "Find video-worthy moments"
+  default_prompt: "Use -story-selector to find the strongest short-video ideas in this transcript."

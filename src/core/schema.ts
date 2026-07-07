@@ -285,6 +285,67 @@ export const SocialPackageSchema = z.object({
 
 export type SocialPackage = z.infer<typeof SocialPackageSchema>;
 
+export const MusicProviderSchema = z.enum(["evolink", "custom"]);
+export type MusicProvider = z.infer<typeof MusicProviderSchema>;
+
+export const MusicRequestSchema = z.object({
+  provider: MusicProviderSchema,
+  baseUrl: z.string(),
+  model: z.string(),
+  customMode: z.boolean(),
+  instrumental: z.boolean(),
+  prompt: z.string(),
+  style: z.string().nullable(),
+  title: z.string().nullable(),
+  negativeTags: z.string().nullable(),
+  callbackUrl: z.string().nullable(),
+});
+
+export type MusicRequest = z.infer<typeof MusicRequestSchema>;
+
+export const MusicTrackSchema = z.object({
+  id: z.string(),
+  title: z.string().nullable(),
+  tags: z.string().nullable(),
+  durationSeconds: z.number().nonnegative().nullable(),
+  audioUrl: z.string().nullable(),
+  imageUrl: z.string().nullable(),
+  localPath: z.string().nullable(),
+});
+
+export type MusicTrack = z.infer<typeof MusicTrackSchema>;
+
+export const MusicGenerationSchema = z.object({
+  version: z.literal(CUTROOM_VERSION),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  taskId: z.string(),
+  status: z.string(),
+  progress: z.number().min(0).max(100).nullable(),
+  endpoint: z.string(),
+  request: MusicRequestSchema,
+  tracks: z.array(MusicTrackSchema),
+  rawResponse: z.unknown(),
+  warnings: z.array(z.string()).default([]),
+});
+
+export type MusicGeneration = z.infer<typeof MusicGenerationSchema>;
+
+export const MusicMixSchema = z.object({
+  version: z.literal(CUTROOM_VERSION),
+  createdAt: z.string(),
+  targetPath: z.string(),
+  trackPath: z.string(),
+  outputPath: z.string(),
+  musicVolume: z.number().positive(),
+  fadeInSeconds: z.number().nonnegative(),
+  fadeOutSeconds: z.number().nonnegative(),
+  sourceDurationMs: MsSchema,
+  warnings: z.array(z.string()).default([]),
+});
+
+export type MusicMix = z.infer<typeof MusicMixSchema>;
+
 export function emptyTimeline(): Timeline {
   return {
     version: CUTROOM_VERSION,
